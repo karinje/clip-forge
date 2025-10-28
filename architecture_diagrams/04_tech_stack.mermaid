@@ -1,0 +1,48 @@
+graph LR
+    subgraph "Technology Stack"
+        direction TB
+        
+        subgraph Frontend["Frontend Layer"]
+            REACT[React 18 +<br/>TypeScript]
+            ZUSTAND[Zustand<br/>State Mgmt]
+            HTML5[HTML5 Video<br/>Canvas API]
+        end
+        
+        subgraph Desktop["Desktop Layer"]
+            ELECTRON[Electron 28+<br/>Framework]
+            IPC[IPC Communication]
+            NODE[Node.js APIs]
+        end
+        
+        subgraph Processing["Processing Layer"]
+            FFMPEG[FFmpeg<br/>Binary]
+            FLUENT[fluent-ffmpeg<br/>Wrapper]
+            MEDIA[MediaRecorder<br/>API]
+        end
+        
+        subgraph Build["Build & Package"]
+            WEBPACK[Webpack<br/>Bundler]
+            FORGE[Electron Forge]
+            BUILDER[electron-builder]
+        end
+    end
+    
+    REACT --> ELECTRON
+    ZUSTAND --> REACT
+    HTML5 --> REACT
+    
+    ELECTRON --> IPC
+    IPC --> NODE
+    
+    NODE --> FLUENT
+    FLUENT --> FFMPEG
+    NODE --> MEDIA
+    
+    ELECTRON --> FORGE
+    FORGE --> WEBPACK
+    FORGE --> BUILDER
+    
+    style REACT fill:#61DAFB,stroke:#21A1C4,color:#000
+    style ELECTRON fill:#47848F,stroke:#2F5A64,color:#fff
+    style FFMPEG fill:#007808,stroke:#005506,color:#fff
+    style FORGE fill:#6B4FBB,stroke:#4A3683,color:#fff

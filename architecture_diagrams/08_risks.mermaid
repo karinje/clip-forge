@@ -1,0 +1,36 @@
+graph TB
+    subgraph Risks["Key Risks & Mitigations"]
+        direction TB
+        
+        R1[Risk: FFmpeg<br/>Integration Issues]
+        M1[Mitigation: Test early<br/>Bundle binaries<br/>Validate Day 1]
+        
+        R2[Risk: Timeline<br/>Performance]
+        M2[Mitigation: Start with DOM<br/>Optimize with React.memo<br/>Canvas if needed]
+        
+        R3[Risk: Screen Recording<br/>Platform Differences]
+        M3[Mitigation: Use desktopCapturer<br/>Test early on target OS<br/>Clear error messages]
+        
+        R4[Risk: Multi-Track<br/>Preview Performance]
+        M4[Mitigation: Non-realtime preview<br/>Render button approach<br/>Lower resolution proxy]
+        
+        R5[Risk: Packaging<br/>Complexity]
+        M5[Mitigation: Test Day 2<br/>Single platform focus<br/>Skip code signing]
+        
+        R1 --> M1
+        R2 --> M2
+        R3 --> M3
+        R4 --> M4
+        R5 --> M5
+    end
+    
+    style R1 fill:#E74C3C,stroke:#C0392B,color:#fff
+    style R2 fill:#E74C3C,stroke:#C0392B,color:#fff
+    style R3 fill:#E74C3C,stroke:#C0392B,color:#fff
+    style R4 fill:#E74C3C,stroke:#C0392B,color:#fff
+    style R5 fill:#E74C3C,stroke:#C0392B,color:#fff
+    style M1 fill:#27AE60,stroke:#1E8449,color:#fff
+    style M2 fill:#27AE60,stroke:#1E8449,color:#fff
+    style M3 fill:#27AE60,stroke:#1E8449,color:#fff
+    style M4 fill:#27AE60,stroke:#1E8449,color:#fff
+    style M5 fill:#27AE60,stroke:#1E8449,color:#fff

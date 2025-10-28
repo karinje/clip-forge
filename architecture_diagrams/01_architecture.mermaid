@@ -1,0 +1,99 @@
+graph TB
+    subgraph "ClipForge Desktop Video Editor"
+        direction TB
+        
+        subgraph "User Interface (Renderer Process - React)"
+            direction LR
+            UI[App Layout]
+            ML[Media Library]
+            PP[Preview Player]
+            TL[Timeline Editor]
+            ED[Export Dialog]
+            RP[Recording Panel]
+            
+            UI --> ML
+            UI --> PP
+            UI --> TL
+            UI --> ED
+            UI --> RP
+        end
+        
+        subgraph "State Management (Zustand)"
+            PS[Project Store]
+            TS[Timeline Store]
+            RS[Recording Store]
+            UIS[UI Store]
+        end
+        
+        subgraph "Preload Bridge"
+            PL[IPC Bridge<br/>Security Layer]
+        end
+        
+        subgraph "Main Process (Electron - Node.js)"
+            direction TB
+            
+            subgraph "IPC Handlers"
+                FH[File Handlers]
+                VH[Video Handlers]
+                EH[Export Handlers]
+                RH[Recording Handlers]
+            end
+            
+            subgraph "Services"
+                FFM[FFmpeg Service]
+                EXP[Export Service]
+                META[Metadata Service]
+                REC[Recording Service]
+            end
+            
+            FH --> META
+            VH --> META
+            EH --> EXP
+            EH --> FFM
+            RH --> REC
+            RH --> FFM
+        end
+        
+        subgraph "System Resources"
+            FS[File System]
+            CAM[Camera/Mic]
+            SCR[Screen Capture]
+            FFBIN[FFmpeg Binary]
+        end
+    end
+    
+    %% Connections between layers
+    ML -.IPC.-> PL
+    PP -.IPC.-> PL
+    TL -.IPC.-> PL
+    ED -.IPC.-> PL
+    RP -.IPC.-> PL
+    
+    PL -.secure.-> FH
+    PL -.secure.-> VH
+    PL -.secure.-> EH
+    PL -.secure.-> RH
+    
+    ML --> PS
+    TL --> TS
+    RP --> RS
+    ED --> UIS
+    
+    FFM --> FFBIN
+    META --> FS
+    EXP --> FS
+    REC --> CAM
+    REC --> SCR
+    
+    %% Styling
+    classDef renderer fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    classDef store fill:#7B68EE,stroke:#5A4FCF,color:#fff
+    classDef main fill:#E67E22,stroke:#C86A1A,color:#fff
+    classDef system fill:#27AE60,stroke:#1E8449,color:#fff
+    classDef preload fill:#E74C3C,stroke:#C0392B,color:#fff
+    
+    class UI,ML,PP,TL,ED,RP renderer
+    class PS,TS,RS,UIS store
+    class PL preload
+    class FH,VH,EH,RH,FFM,EXP,META,REC main
+    class FS,CAM,SCR,FFBIN system

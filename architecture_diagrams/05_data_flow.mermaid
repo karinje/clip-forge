@@ -1,0 +1,39 @@
+sequenceDiagram
+    participant User
+    participant UI as Renderer UI
+    participant Store as Zustand Store
+    participant IPC as Preload Bridge
+    participant Main as Main Process
+    participant FFmpeg
+    participant FS as File System
+    
+    User->>UI: Import Video
+    UI->>IPC: request:import-file
+    IPC->>Main: Import Handler
+    Main->>FS: Read File
+    Main->>FFmpeg: Extract Metadata
+    FFmpeg-->>Main: Duration, Resolution, Format
+    Main-->>IPC: File Info
+    IPC-->>Store: Update Media Library
+    Store-->>UI: Render Clip Thumbnail
+    
+    User->>UI: Drag to Timeline
+    UI->>Store: Add to Timeline
+    Store-->>UI: Update Timeline View
+    
+    User->>UI: Trim/Edit Clip
+    UI->>Store: Update Clip Bounds
+    Store-->>UI: Update Preview
+    
+    User->>UI: Export Video
+    UI->>IPC: request:export
+    IPC->>Main: Export Handler
+    Main->>FFmpeg: Process Video
+    Note over FFmpeg: Concat clips<br/>Apply trim<br/>Composite layers
+    FFmpeg->>FS: Write MP4
+    FFmpeg-->>Main: Progress Updates
+    Main-->>IPC: Progress Events
+    IPC-->>UI: Update Progress Bar
+    FS-->>Main: Export Complete
+    Main-->>IPC: Export Success
+    IPC-->>UI: Show Success Dialog

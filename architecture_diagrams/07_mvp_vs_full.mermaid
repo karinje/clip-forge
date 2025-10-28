@@ -1,0 +1,49 @@
+graph LR
+    subgraph MVP["MVP Features (Tuesday)"]
+        direction TB
+        MVP1[✅ Desktop App Launch]
+        MVP2[✅ Video Import<br/>MP4/MOV]
+        MVP3[✅ Timeline View]
+        MVP4[✅ Video Preview]
+        MVP5[✅ Basic Trim]
+        MVP6[✅ Export to MP4]
+        MVP7[✅ Native Package]
+        
+        MVP1 --> MVP2
+        MVP2 --> MVP3
+        MVP3 --> MVP4
+        MVP4 --> MVP5
+        MVP5 --> MVP6
+        MVP6 --> MVP7
+    end
+    
+    subgraph FULL["Full Features (Wednesday)"]
+        direction TB
+        
+        subgraph REC["Recording"]
+            F1[📹 Screen Recording]
+            F2[📷 Webcam Recording]
+            F3[🎙️ Audio Capture]
+        end
+        
+        subgraph EDI["Advanced Editing"]
+            F4[🎬 Multi-Clip Timeline]
+            F5[✂️ Clip Splitting]
+            F6[🔄 Drag & Reorder]
+            F7[📊 Multi-Track Support]
+        end
+        
+        subgraph EXP["Enhanced Export"]
+            F8[⚙️ Resolution Options]
+            F9[📈 Progress Tracking]
+            F10[🎨 PiP Composition]
+        end
+    end
+    
+    MVP --> FULL
+    
+    style MVP fill:#27AE60,stroke:#1E8449,color:#fff
+    style FULL fill:#3498DB,stroke:#2874A6,color:#fff
+    style REC fill:#E74C3C,stroke:#C0392B,color:#fff
+    style EDI fill:#F39C12,stroke:#D68910,color:#fff
+    style EXP fill:#9B59B6,stroke:#7D3C98,color:#fff

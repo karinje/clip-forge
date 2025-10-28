@@ -1,0 +1,57 @@
+flowchart LR
+    START([User Opens App])
+    
+    subgraph Import["📥 Import Phase"]
+        IMP1[Drag & Drop<br/>Video Files]
+        IMP2[File Picker<br/>Selection]
+        IMP3[Record Screen/<br/>Webcam]
+        
+        IMP1 --> MED[Media Library]
+        IMP2 --> MED
+        IMP3 --> MED
+    end
+    
+    subgraph Edit["✂️ Edit Phase"]
+        TL1[Drag Clips to<br/>Timeline]
+        TL2[Arrange &<br/>Reorder]
+        TL3[Trim/Split<br/>Clips]
+        TL4[Multi-Track<br/>Layering]
+        
+        TL1 --> TL2
+        TL2 --> TL3
+        TL3 --> TL4
+    end
+    
+    subgraph Preview["👁️ Preview Phase"]
+        PRV1[Playback<br/>Controls]
+        PRV2[Scrub Timeline]
+        PRV3[Real-time<br/>Preview]
+        
+        PRV1 --> PRV2
+        PRV2 --> PRV3
+    end
+    
+    subgraph Export["💾 Export Phase"]
+        EXP1[Select<br/>Resolution]
+        EXP2[FFmpeg<br/>Processing]
+        EXP3[Progress<br/>Indicator]
+        EXP4[Save MP4<br/>File]
+        
+        EXP1 --> EXP2
+        EXP2 --> EXP3
+        EXP3 --> EXP4
+    end
+    
+    START --> Import
+    MED --> Edit
+    Edit --> Preview
+    Preview -.iterate.-> Edit
+    Preview --> Export
+    EXP4 --> DONE([✅ Video Ready])
+    
+    style START fill:#4CAF50,stroke:#388E3C,color:#fff
+    style DONE fill:#4CAF50,stroke:#388E3C,color:#fff
+    style Import fill:#2196F3,stroke:#1976D2,color:#fff
+    style Edit fill:#FF9800,stroke:#F57C00,color:#fff
+    style Preview fill:#9C27B0,stroke:#7B1FA2,color:#fff
+    style Export fill:#F44336,stroke:#D32F2F,color:#fff
