@@ -2,6 +2,10 @@ export const IPC_CHANNELS = {
   // Test
   TEST: 'test-channel',
   
+  // File operations
+  FILE_OPEN: 'file:open',
+  FILE_SAVE: 'file:save',
+  
   // FFmpeg
   FFMPEG_TEST: 'ffmpeg:test',
   
