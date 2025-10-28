@@ -9,6 +9,10 @@ const mainConfig = {
     path: path.resolve(__dirname, 'dist/main'),
     filename: 'index.js',
   },
+  externals: {
+    '@ffmpeg-installer/ffmpeg': 'commonjs @ffmpeg-installer/ffmpeg',
+    'fluent-ffmpeg': 'commonjs fluent-ffmpeg',
+  },
   module: {
     rules: [
       {
