@@ -13,11 +13,11 @@ export function createWindow(): BrowserWindow {
   });
 
   // Load the index.html from the renderer
+  win.loadFile(path.join(__dirname, '../renderer/index.html'));
+  
+  // Open DevTools in development
   if (process.env.NODE_ENV === 'development') {
-    win.loadURL('http://localhost:3000');
     win.webContents.openDevTools();
-  } else {
-    win.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
 
   return win;
