@@ -1,0 +1,56 @@
+{
+  "name": "clipforge",
+  "version": "1.0.0",
+  "description": "A desktop video editor for screen recording, editing, and export - built with Electron, React, and TypeScript.",
+  "main": "dist/main/index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "build:watch": "webpack --config webpack.config.js --watch",
+    "start:renderer": "webpack serve --config webpack.config.js --mode development",
+    "start:electron": "NODE_ENV=development electron .",
+    "start": "npm run build && npm run start:electron",
+    "dev": "concurrently \"npm run build:watch\" \"npm run start:renderer\" \"wait-on http://localhost:3000 && npm run start:electron\"",
+    "package": "npm run build && electron-builder",
+    "clean": "rm -rf dist out"
+  },
+  "keywords": [
+    "video",
+    "editor",
+    "electron",
+    "desktop"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.10.2",
+    "@electron-forge/maker-deb": "^7.10.2",
+    "@electron-forge/maker-rpm": "^7.10.2",
+    "@electron-forge/maker-squirrel": "^7.10.2",
+    "@electron-forge/maker-zip": "^7.10.2",
+    "@electron-forge/plugin-webpack": "^7.10.2",
+    "@types/node": "^24.9.1",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "concurrently": "^9.2.1",
+    "css-loader": "^7.1.2",
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12",
+    "html-webpack-plugin": "^5.6.4",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.3",
+    "wait-on": "^9.0.1",
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zustand": "^5.0.8"
+  }
+}
