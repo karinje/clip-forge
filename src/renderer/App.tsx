@@ -1,5 +1,6 @@
 import React from 'react';
 import { MediaLibrary } from './components/MediaLibrary/MediaLibrary';
+import { PreviewPlayer } from './components/PreviewPlayer/PreviewPlayer';
 import './styles/index.css';
 
 export const App: React.FC = () => {
@@ -9,10 +10,7 @@ export const App: React.FC = () => {
         <MediaLibrary />
       </div>
       <div className="main">
-        <div className="placeholder">
-          <h1>ClipForge</h1>
-          <p>Import videos to get started</p>
-        </div>
+        <PreviewPlayer />
       </div>
     </div>
   );
