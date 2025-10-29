@@ -62,6 +62,7 @@ This PRD defines the scope for both milestones, provides detailed user stories, 
 2. Drag clips onto timeline
 3. Arrange clips in sequence
 4. Trim clips (adjust start/end points)
+5. Preview seek bar remains aligned with the selected clip’s boundaries while trimming
 5. Split clips at playhead position
 6. Delete clips from timeline
 7. Multiple tracks (minimum 2: main video + overlay/PiP)
@@ -449,6 +450,12 @@ This PRD defines the scope for both milestones, provides detailed user stories, 
 - **Keep it simple:** DOM-based timeline, single-track preview, basic export. Polish after core works.
 - **Document as you go:** Update README incrementally, don't leave it for the end.
 - **Have a backup plan:** If recording proves too difficult, focus on making editing/export bulletproof.
+
+### Upgrade Strategy: Trim Handle UX
+
+- Current behaviour keeps the preview seek label anchored to the clip’s in-point for stability across multi-clip timelines.
+- Next iteration should track which trim handle is active so dragging the out-point pins the label to the combined out-point, while dragging the in-point keeps it at the clip start.
+- Store-level metadata (e.g. `activeTrimHandle`) will unblock keyboard nudges, snapping, and richer visual feedback without rewriting the trimming flow.
 
 ---
 

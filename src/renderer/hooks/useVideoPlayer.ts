@@ -27,8 +27,21 @@ export function useVideoPlayer() {
 
   const seek = (time: number) => {
     if (videoRef.current) {
-      videoRef.current.currentTime = time;
-      setCurrentTime(time);
+      // Ensure video is loaded enough to seek
+      if (videoRef.current.readyState >= 2) {
+        videoRef.current.currentTime = time;
+        setCurrentTime(time);
+      } else {
+        // Wait for video to be ready, then seek
+        const handleCanPlay = () => {
+          if (videoRef.current) {
+            videoRef.current.currentTime = time;
+            setCurrentTime(time);
+            videoRef.current.removeEventListener('canplay', handleCanPlay);
+          }
+        };
+        videoRef.current.addEventListener('canplay', handleCanPlay);
+      }
     }
   };
 
@@ -44,17 +57,31 @@ export function useVideoPlayer() {
     const video = videoRef.current;
     if (!video) return;
 
-    const handleTimeUpdate = () => setCurrentTime(video.currentTime);
-    const handleLoadedMetadata = () => setDuration(video.duration);
+    const handleTimeUpdate = () => {
+      setCurrentTime(video.currentTime);
+    };
+    
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration);
+      setCurrentTime(0);
+    };
+    
     const handleEnded = () => setIsPlaying(false);
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
 
+    // Listen to all events
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('ended', handleEnded);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
+    
+    // If metadata is already loaded, set duration immediately
+    if (video.duration && !isNaN(video.duration)) {
+      setDuration(video.duration);
+      setCurrentTime(video.currentTime);
+    }
 
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
@@ -63,7 +90,7 @@ export function useVideoPlayer() {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, []);
+  }, [videoRef.current?.src]); // Re-run when video source changes
 
   return {
     videoRef,

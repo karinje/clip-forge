@@ -29,20 +29,22 @@ export function registerFileHandlers() {
     logger.info('Opening save dialog');
     
     const result = await dialog.showSaveDialog({
-      defaultPath,
+      defaultPath: defaultPath || 'output.mp4',
       filters: [
         { name: 'MP4 Video', extensions: ['mp4'] },
+        { name: 'WebM Video', extensions: ['webm'] },
+        { name: 'MOV Video', extensions: ['mov'] },
         { name: 'All Files', extensions: ['*'] },
       ],
     });
 
     if (result.canceled || !result.filePath) {
       logger.info('Save dialog canceled');
-      return { success: false, data: null };
+      return null;
     }
 
     logger.info('Save path selected:', result.filePath);
-    return { success: true, data: result.filePath };
+    return result.filePath;
   });
 }
 

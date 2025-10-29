@@ -1,0 +1,192 @@
+.timelineClip {
+  position: absolute;
+  height: 60px;
+}
+
+.clipSurface {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  background: #0e639c;
+  border: 2px solid #1177bb;
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  z-index: 2;
+}
+
+.thumbnailContainer {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  height: 52px;
+  width: 52px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #000;
+  pointer-events: none;
+}
+
+.thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.timelineClip:hover .clipSurface {
+  background: #1177bb;
+  border-color: #2e96ff;
+}
+
+.timelineClip.selected .clipSurface {
+  background: #1177bb;
+  border-color: #1e90ff;
+  box-shadow: 0 0 0 3px #1e90ff, 0 0 20px rgba(30, 144, 255, 0.5);
+}
+
+.clipContent {
+  position: relative;
+  z-index: 1;
+  padding: 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.clipName {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.clipDuration {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  margin-top: 4px;
+}
+
+.trimHandle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  cursor: ew-resize;
+  background: rgba(255, 255, 255, 0.5);
+  transition: background 0.2s, width 0.2s;
+  z-index: 10;
+}
+
+.trimHandle:hover {
+  background: rgba(255, 255, 255, 0.7);
+  width: 20px;
+}
+
+.trimHandle.left {
+  left: 0;
+  border-radius: 4px 0 0 4px;
+}
+
+.trimHandle.right {
+  right: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.trimHandle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 16px;
+  background: #fff;
+  border-radius: 1px;
+}
+
+.trimLabel {
+  position: absolute;
+  top: 4px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.leftLabel {
+  left: 20px;
+}
+
+.rightLabel {
+  right: 20px;
+}
+
+.deleteButton {
+  position: absolute;
+  top: 4px;
+  right: 24px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 5;
+}
+
+.timelineClip:hover .deleteButton {
+  opacity: 1;
+}
+
+.deleteButton:hover {
+  background: #c42b1c;
+  transform: scale(1.15);
+}
+
+.trimmedRegionLeft,
+.trimmedRegionRight {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.trimmedRegionLeft {
+  left: 0;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+}
+
+.trimmedRegionRight {
+  right: 0;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
+

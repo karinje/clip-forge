@@ -46,7 +46,7 @@ export const PlaybackControls: React.FC<Props> = ({
       </button>
 
       <div className={styles.timeline}>
-        <span className={styles.time}>{formatTime(currentTime)}</span>
+        <span className={styles.time}>0:00</span>
         <div className={styles.seekBarContainer}>
           <input
             type="range"
@@ -59,6 +59,16 @@ export const PlaybackControls: React.FC<Props> = ({
               background: `linear-gradient(to right, #0e639c ${progress}%, #3e3e42 ${progress}%)`,
             }}
           />
+          {currentTime > 0 && (
+            <div 
+              className={styles.currentTimeLabel}
+              style={{
+                left: `${progress}%`,
+              }}
+            >
+              {formatTime(currentTime)}
+            </div>
+          )}
         </div>
         <span className={styles.time}>{formatTime(duration)}</span>
       </div>

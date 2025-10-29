@@ -19,6 +19,16 @@ export interface ConcatenateOptions {
   onProgress?: (percent: number) => void;
 }
 
+export interface ExportOptions {
+  inputPath: string;
+  outputPath: string;
+  trimStart?: number;
+  trimEnd?: number;
+  format: 'mp4' | 'webm' | 'mov';
+  quality: 'high' | 'medium' | 'low';
+  onProgress?: (percent: number) => void;
+}
+
 export class FFmpegService {
   constructor() {
     const ffmpegPath = getFFmpegPath();
@@ -132,6 +142,110 @@ export class FFmpegService {
         })
         .on('error', (err) => {
           logger.error('Conversion failed:', err);
+          reject(err);
+        })
+        .run();
+    });
+  }
+
+  async exportVideo(options: ExportOptions): Promise<void> {
+    const { inputPath, outputPath, trimStart, trimEnd, format, quality, onProgress } = options;
+    
+    logger.info('Exporting video:', { inputPath, outputPath, format, quality, trimStart, trimEnd });
+
+    return new Promise((resolve, reject) => {
+      let command = ffmpeg(inputPath);
+
+      // Apply trim if specified
+      if (trimStart !== undefined && trimStart > 0) {
+        command = command.setStartTime(trimStart);
+      }
+      
+      if (trimEnd !== undefined && trimEnd > 0) {
+        // trimEnd is seconds from the END of the video
+        // We need to calculate duration based on original duration minus trimEnd
+        // For now, we'll handle this in the IPC handler
+      }
+
+      // Quality settings
+      const qualityMap = {
+        high: { scale: '1920:1080', crf: '18' },
+        medium: { scale: '1280:720', crf: '23' },
+        low: { scale: '854:480', crf: '28' },
+      };
+
+      const qualitySettings = qualityMap[quality];
+
+      // Format-specific encoding
+      if (format === 'mp4') {
+        command
+          .videoCodec('libx264')
+          .audioCodec('aac')
+          .outputOptions([
+            `-vf scale=${qualitySettings.scale}:force_original_aspect_ratio=decrease`,
+            '-preset medium',
+            `-crf ${qualitySettings.crf}`,
+            '-movflags +faststart',
+          ]);
+      } else if (format === 'webm') {
+        command
+          .videoCodec('libvpx-vp9')
+          .audioCodec('libopus')
+          .outputOptions([
+            `-vf scale=${qualitySettings.scale}:force_original_aspect_ratio=decrease`,
+            '-preset medium',
+            `-crf ${qualitySettings.crf}`,
+            '-b:v 0',
+          ]);
+      } else if (format === 'mov') {
+        command
+          .videoCodec('libx264')
+          .audioCodec('aac')
+          .outputOptions([
+            `-vf scale=${qualitySettings.scale}:force_original_aspect_ratio=decrease`,
+            '-preset medium',
+            `-crf ${qualitySettings.crf}`,
+            '-pix_fmt yuv420p',
+          ]);
+      }
+
+      command
+        .output(outputPath)
+        .on('progress', (progress) => {
+          if (onProgress && progress.percent) {
+            onProgress(progress.percent);
+          }
+        })
+        .on('end', () => {
+          logger.info('Export complete');
+          resolve();
+        })
+        .on('error', (err) => {
+          logger.error('Export failed:', err);
+          reject(err);
+        })
+        .run();
+    });
+  }
+
+  /**
+   * Extract a thumbnail from a video at a specific timestamp
+   */
+  async extractThumbnail(videoPath: string, timestamp: number = 0): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const tempDir = getTempDir();
+      const outputPath = path.join(tempDir, `thumb_${Date.now()}.jpg`);
+      
+      ffmpeg(videoPath)
+        .seekInput(timestamp)
+        .frames(1)
+        .output(outputPath)
+        .on('end', () => {
+          logger.info('Thumbnail extracted:', outputPath);
+          resolve(outputPath);
+        })
+        .on('error', (err) => {
+          logger.error('Thumbnail extraction failed:', err);
           reject(err);
         })
         .run();

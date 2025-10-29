@@ -21,7 +21,10 @@ export function useMediaImport() {
 
       for (const filePath of result.data) {
         try {
-          const metadataResult = await window.electronAPI.getVideoMetadata(filePath);
+          const [metadataResult, thumbnailResult] = await Promise.all([
+            window.electronAPI.getVideoMetadata(filePath),
+            window.electronAPI.getVideoThumbnail(filePath, 0)
+          ]);
 
           if (metadataResult.success) {
             const clip: MediaClip = {
@@ -38,6 +41,7 @@ export function useMediaImport() {
               fileSize: metadataResult.data.fileSize,
               fps: metadataResult.data.fps,
               bitrate: metadataResult.data.bitrate,
+              thumbnail: thumbnailResult.success ? thumbnailResult.data : undefined,
               createdAt: new Date(),
             };
 

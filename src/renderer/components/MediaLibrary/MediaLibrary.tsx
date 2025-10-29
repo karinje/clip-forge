@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useProjectStore } from '../../store/projectStore';
 import { useMediaImport } from '../../hooks/useMediaImport';
 import { MediaClipItem } from './MediaClipItem';
@@ -8,7 +8,24 @@ export const MediaLibrary: React.FC = () => {
   const clips = useProjectStore((state) => state.clips);
   const selectedClipId = useProjectStore((state) => state.selectedClipId);
   const selectClip = useProjectStore((state) => state.selectClip);
+  const removeClip = useProjectStore((state) => state.removeClip);
   const { importFiles, importing, error } = useMediaImport();
+
+  // Keyboard shortcut to delete selected media clip
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedClipId) {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          removeClip(selectedClipId);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedClipId, removeClip]);
 
   return (
     <div className={styles.mediaLibrary}>
@@ -44,6 +61,7 @@ export const MediaLibrary: React.FC = () => {
             clip={clip}
             isSelected={clip.id === selectedClipId}
             onSelect={() => selectClip(clip.id)}
+            onDelete={() => removeClip(clip.id)}
           />
         ))}
       </div>

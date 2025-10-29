@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Video operations
   getVideoMetadata: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.VIDEO_METADATA, filePath),
+  getVideoThumbnail: (filePath: string, timestamp?: number) => ipcRenderer.invoke(IPC_CHANNELS.VIDEO_THUMBNAIL, filePath, timestamp),
+  exportVideo: (options: any) => ipcRenderer.invoke(IPC_CHANNELS.VIDEO_EXPORT, options),
+  exportMultipleClips: (options: any) => ipcRenderer.invoke(IPC_CHANNELS.VIDEO_EXPORT_MULTIPLE, options),
   
   // Generic IPC (for future use)
   sendMessage: (channel: string, data: any) => {
@@ -24,8 +27,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 // Type definitions for window.electronAPI
 export interface ElectronAPI {
   openFile: () => Promise<{ success: boolean; data: string[] }>;
-  saveFile: (defaultPath?: string) => Promise<{ success: boolean; data: string | null }>;
+  saveFile: (defaultPath?: string) => Promise<string | null>;
   getVideoMetadata: (filePath: string) => Promise<any>;
+  getVideoThumbnail: (filePath: string, timestamp?: number) => Promise<{ success: boolean; data?: string; error?: string }>;
+  exportVideo: (options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+  exportMultipleClips: (options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
   sendMessage: (channel: string, data: any) => void;
   onMessage: (channel: string, callback: (...args: any[]) => void) => void;
   invoke: (channel: string, ...args: any[]) => Promise<any>;

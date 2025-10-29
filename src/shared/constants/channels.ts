@@ -11,7 +11,10 @@ export const IPC_CHANNELS = {
   
   // Video metadata
   VIDEO_METADATA: 'video:metadata',
+  VIDEO_THUMBNAIL: 'video:thumbnail',
   
-  // More channels will be added in later PRs
+  // Video export
+  VIDEO_EXPORT: 'video:export',
+  VIDEO_EXPORT_MULTIPLE: 'video:export-multiple',
 };
 
