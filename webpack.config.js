@@ -2,7 +2,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const mainConfig = {
-  mode: process.env.NODE_ENV || 'development',
+  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   entry: './src/main/index.ts',
   target: 'electron-main',
   output: {
@@ -37,7 +37,7 @@ const mainConfig = {
 };
 
 const preloadConfig = {
-  mode: process.env.NODE_ENV || 'development',
+  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   entry: './src/preload/index.ts',
   target: 'electron-preload',
   output: {
@@ -64,7 +64,7 @@ const preloadConfig = {
 };
 
 const rendererConfig = {
-  mode: process.env.NODE_ENV || 'development',
+  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   entry: './src/renderer/index.tsx',
   target: 'electron-renderer',
   output: {

@@ -14,7 +14,6 @@ export const App: React.FC = () => {
   useEffect(() => {
     const hasCleared = localStorage.getItem('clipforge-cleared-v3');
     if (!hasCleared) {
-      console.log('[App] Clearing old localStorage (one-time cleanup)');
       localStorage.removeItem('clipforge-timeline');
       localStorage.removeItem('clipforge-project');
       localStorage.setItem('clipforge-cleared-v3', 'true');
@@ -36,12 +35,25 @@ export const App: React.FC = () => {
   
   return (
     <div className="app">
-      <div className="sidebar">
-        <MediaLibrary />
-      </div>
-      <div className="main">
-        <PreviewPlayer />
-        <Timeline onExportClick={handleExportClick} />
+      <header className="app-header">
+        <div className="app-logo">ClipForge</div>
+        <div className="header-spacer"></div>
+        <button className="header-button" onClick={() => window.location.reload()}>
+          Reset
+        </button>
+        <button className="header-button primary" onClick={handleExportClick}>
+          Export Video
+        </button>
+      </header>
+      
+      <div className="app-workspace">
+        <div className="sidebar">
+          <MediaLibrary />
+        </div>
+        <div className="main">
+          <PreviewPlayer />
+          <Timeline onExportClick={handleExportClick} />
+        </div>
       </div>
       
       {showExportDialog && (

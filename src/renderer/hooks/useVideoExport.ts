@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTimelineStore } from '../store/timelineStore';
 import { useProjectStore } from '../store/projectStore';
 import { ExportSettings } from '../components/ExportDialog/ExportDialog';
@@ -10,6 +10,19 @@ export const useVideoExport = () => {
   
   const clips = useTimelineStore(state => state.clips);
   const mediaClips = useProjectStore(state => state.clips);
+  
+  // Listen for progress updates from main process
+  useEffect(() => {
+    const handleProgress = (percent: number) => {
+      setProgress(Math.min(Math.max(percent, 0), 100));
+    };
+    
+    window.electronAPI.onMessage('export-progress', handleProgress);
+    
+    return () => {
+      // Cleanup listener (note: electron doesn't provide easy removeListener via contextBridge)
+    };
+  }, []);
   
   const exportVideo = async (settings: ExportSettings) => {
     setIsExporting(true);
@@ -37,10 +50,12 @@ export const useVideoExport = () => {
       }
       
       // Single clip export (MVP)
+      let result;
+      
       if (exportData.length === 1) {
         const clip = exportData[0];
         
-        await window.electronAPI.exportVideo({
+        result = await window.electronAPI.exportVideo({
           inputPath: clip.filePath,
           outputPath: settings.outputPath,
           trimStart: clip.trimStart,
@@ -50,7 +65,7 @@ export const useVideoExport = () => {
         });
       } else {
         // Multiple clips - concatenate
-        await window.electronAPI.exportMultipleClips({
+        result = await window.electronAPI.exportMultipleClips({
           clips: exportData,
           outputPath: settings.outputPath,
           format: settings.format,
@@ -58,12 +73,17 @@ export const useVideoExport = () => {
         });
       }
       
-      setProgress(100);
-      setIsExporting(false);
-      
-      return true;
+      if (result.success) {
+        setProgress(100);
+        setIsExporting(false);
+        return true;
+      } else {
+        setError(result.error || 'Export failed');
+        setIsExporting(false);
+        return false;
+      }
     } catch (err: any) {
-      console.error('[useVideoExport] Export failed:', err);
+      // Export failed
       setError(err.message || 'Export failed');
       setIsExporting(false);
       return false;

@@ -2,17 +2,17 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px;
-  background: #252526;
-  border-top: 1px solid #3e3e42;
+  padding: 12px 16px;
+  background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border);
 }
 
 .playButton {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: #0e639c;
-  color: #fff;
+  background: var(--color-accent);
+  color: white;
   border: none;
   font-size: 16px;
   cursor: pointer;
@@ -20,11 +20,13 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.2s;
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .playButton:hover {
-  background: #1177bb;
+  background: var(--color-accent-hover);
+  transform: scale(1.05);
 }
 
 .timeline {
@@ -35,10 +37,11 @@
 }
 
 .time {
-  color: #ccc;
-  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
-  min-width: 45px;
+  font-weight: 500;
+  min-width: 48px;
   text-align: center;
 }
 
@@ -122,7 +125,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #0e639c;
+  background: var(--color-accent);
   cursor: pointer;
 }
 
@@ -130,7 +133,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #0e639c;
+  background: var(--color-accent);
   cursor: pointer;
   border: none;
 }

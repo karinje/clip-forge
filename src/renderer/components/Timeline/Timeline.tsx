@@ -91,7 +91,7 @@ export const Timeline: React.FC<Props> = ({ onExportClick }) => {
         const { id, duration } = JSON.parse(data);
         addClipToTimeline(id, duration);
       } catch (err) {
-        console.error('Failed to parse dropped clip data');
+        // Failed to parse dropped clip data
       }
     }
   };

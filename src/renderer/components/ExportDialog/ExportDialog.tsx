@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './ExportDialog.module.css';
 
 interface Props {
@@ -25,10 +25,12 @@ export const ExportDialog: React.FC<Props> = ({
   const [format, setFormat] = useState<'mp4' | 'webm' | 'mov'>('mp4');
   const [quality, setQuality] = useState<'high' | 'medium' | 'low'>('high');
   const [outputPath, setOutputPath] = useState('');
+  const [exportSuccess, setExportSuccess] = useState(false);
   
   const handleExport = () => {
     if (!outputPath || isExporting) return;
     
+    setExportSuccess(false);
     onExport({
       format,
       quality,
@@ -42,6 +44,13 @@ export const ExportDialog: React.FC<Props> = ({
       setOutputPath(path);
     }
   };
+  
+  // Show success when export completes
+  useEffect(() => {
+    if (!isExporting && progress === 100 && !error) {
+      setExportSuccess(true);
+    }
+  }, [isExporting, progress, error]);
   
   return (
     <div className={styles.overlay}>
@@ -174,9 +183,18 @@ export const ExportDialog: React.FC<Props> = ({
             </div>
           )}
           
+          {exportSuccess && !error && (
+            <div className={styles.success}>
+              ✓ Export successful! File saved to: {outputPath}
+            </div>
+          )}
+          
           {error && (
             <div className={styles.error}>
-              {error}
+              ✗ Export failed: {error}
+              <div style={{ marginTop: '8px', fontSize: '11px', opacity: 0.8 }}>
+                The video file was not generated. Please check your output path and try again.
+              </div>
             </div>
           )}
         </div>

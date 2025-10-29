@@ -171,7 +171,7 @@ export const PreviewPlayer: React.FC = () => {
       if (trimStartChanged) {
         video.currentTime = selectedTimelineClip.trimStart;
         setAbsoluteTimelinePosition(positionBeforeCurrentClip);
-        console.log(`[TRIM] Start changed for clip ${currentClipIndex}, position=${positionBeforeCurrentClip.toFixed(2)}`);
+        // Trimming from start
       }
 
       if (trimEndChanged) {
@@ -179,7 +179,7 @@ export const PreviewPlayer: React.FC = () => {
         video.currentTime = newEndPosition;
         const finalPosition = positionBeforeCurrentClip + selectedTimelineClip.duration;
         setAbsoluteTimelinePosition(finalPosition);
-        console.log(`[TRIM] End changed for clip ${currentClipIndex}, sum(prev)=${positionBeforeCurrentClip.toFixed(2)}, current.duration=${selectedTimelineClip.duration.toFixed(2)}, final=${finalPosition.toFixed(2)}`);
+        // Trimming from end
       }
 
       prevTrimRef.current = {
@@ -247,7 +247,7 @@ export const PreviewPlayer: React.FC = () => {
           .catch((err) => {
             // Ignore AbortError - it happens when video is changed during loading
             if (err.name !== 'AbortError') {
-              console.error('Video play error:', err);
+              // Video play error (user interaction may be required)
             }
           });
       };

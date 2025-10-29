@@ -94,10 +94,7 @@ export const useTimelineStore = create<TimelineState>()(
         });
 
         // Log FINAL state
-        console.log('[Store] All clips after update:');
-        clips.forEach((c, i) => {
-          console.log(`  [${i}] duration=${c.duration.toFixed(2)} trimS=${c.trimStart.toFixed(2)} trimE=${c.trimEnd.toFixed(2)} start=${c.startTime.toFixed(2)}`);
-        });
+        // Timeline clips updated
 
         return { clips };
       }),

@@ -3,25 +3,12 @@ import { app } from 'electron';
 import fs from 'fs';
 
 export function getFFmpegPath(): string {
-  const isDev = process.env.NODE_ENV === 'development';
-
-  if (isDev) {
-    // Development: use node_modules binary
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('@ffmpeg-installer/ffmpeg').path;
-  }
-
-  // Production: use bundled binary
-  const platform = process.platform;
-  const arch = process.arch;
-  const binaryName = platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
-
-  return path.join(
-    process.resourcesPath,
-    'ffmpeg',
-    `${platform}-${arch}`,
-    binaryName
-  );
+  // Always use @ffmpeg-installer/ffmpeg for now
+  // This works in both dev and when running via npm start
+  // When we package with electron-builder, we'll need to bundle the binary
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
+  return ffmpegInstaller.path;
 }
 
 export function getTempDir(): string {

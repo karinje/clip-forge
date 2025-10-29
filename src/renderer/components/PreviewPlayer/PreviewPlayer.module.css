@@ -3,7 +3,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background: #1e1e1e;
+  background: var(--color-bg-primary);
 }
 
 .videoContainer {
@@ -11,9 +11,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: #000000;
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .video {
@@ -30,26 +31,26 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #999;
-  padding: 32px;
+  color: var(--color-text-muted);
+  padding: 48px;
   text-align: center;
   gap: 12px;
 }
 
 .icon {
-  font-size: 64px;
-  opacity: 0.5;
+  font-size: 72px;
+  opacity: 0.2;
   margin-bottom: 8px;
 }
 
 .text {
-  font-size: 18px;
-  font-weight: 500;
-  color: #ccc;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
 }
 
 .hint {
-  font-size: 14px;
-  color: #999;
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
 

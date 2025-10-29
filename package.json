@@ -3,17 +3,14 @@
   "version": "1.0.0",
   "description": "A desktop video editor for screen recording, editing, and export - built with Electron, React, and TypeScript.",
   "main": "dist/main/index.js",
-  "directories": {
-    "doc": "docs"
-  },
   "scripts": {
-    "build": "webpack --config webpack.config.js",
+    "build": "NODE_ENV=production webpack --config webpack.config.js",
     "build:watch": "webpack --config webpack.config.js --watch",
     "start:renderer": "webpack serve --config webpack.config.js --mode development",
     "start:electron": "NODE_ENV=development electron .",
-    "start": "npm run build && npm run start:electron",
+    "start": "NODE_ENV=production npm run build && electron .",
     "dev": "concurrently \"npm run build:watch\" \"npm run start:renderer\" \"wait-on http://localhost:3000 && npm run start:electron\"",
-    "package": "npm run build && electron-builder",
+    "package": "NODE_ENV=production npm run build && electron-builder",
     "clean": "rm -rf dist out"
   },
   "keywords": [
@@ -24,6 +21,30 @@
   ],
   "author": "",
   "license": "MIT",
+  "build": {
+    "appId": "com.clipforge.app",
+    "productName": "ClipForge",
+    "directories": {
+      "output": "out",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.video",
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "target": ["nsis", "portable"]
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Video"
+    }
+  },
   "type": "commonjs",
   "devDependencies": {
     "@electron-forge/cli": "^7.10.2",

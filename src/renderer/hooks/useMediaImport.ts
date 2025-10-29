@@ -47,16 +47,16 @@ export function useMediaImport() {
 
             addClip(clip);
           } else {
-            console.error('Failed to get metadata:', metadataResult.error);
+            // Failed to get metadata
             setError(`Failed to import ${filePath.split('/').pop()}: ${metadataResult.error}`);
           }
         } catch (err) {
-          console.error('Error processing file:', err);
+          // Error processing file
           setError(`Error processing ${filePath.split('/').pop()}`);
         }
       }
     } catch (err) {
-      console.error('Import failed:', err);
+      // Import failed
       setError('Failed to import files');
     } finally {
       setImporting(false);

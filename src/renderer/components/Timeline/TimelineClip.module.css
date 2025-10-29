@@ -8,13 +8,14 @@
   top: 0;
   bottom: 0;
   width: 100%;
-  background: #0e639c;
-  border: 2px solid #1177bb;
-  border-radius: 4px;
+  background: linear-gradient(135deg, #0d7fff 0%, #0066e0 100%);
+  border: 1.5px solid rgba(13, 127, 255, 0.6);
+  border-radius: var(--radius-md);
   cursor: pointer;
   overflow: hidden;
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.15s ease;
   z-index: 2;
+  box-shadow: var(--shadow-sm);
 }
 
 .thumbnailContainer {
@@ -36,14 +37,15 @@
 }
 
 .timelineClip:hover .clipSurface {
-  background: #1177bb;
-  border-color: #2e96ff;
+  background: linear-gradient(135deg, #0066e0 0%, #0055c0 100%);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-md);
 }
 
 .timelineClip.selected .clipSurface {
-  background: #1177bb;
-  border-color: #1e90ff;
-  box-shadow: 0 0 0 3px #1e90ff, 0 0 20px rgba(30, 144, 255, 0.5);
+  background: linear-gradient(135deg, #0d7fff 0%, #0066e0 100%);
+  border-color: #00c6ff;
+  box-shadow: 0 0 0 2px #00c6ff, 0 0 16px rgba(0, 198, 255, 0.4);
 }
 
 .clipContent {
@@ -79,26 +81,26 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 16px;
+  width: 14px;
   cursor: ew-resize;
-  background: rgba(255, 255, 255, 0.5);
-  transition: background 0.2s, width 0.2s;
+  background: rgba(255, 255, 255, 0.4);
+  transition: all 0.15s ease;
   z-index: 10;
 }
 
 .trimHandle:hover {
-  background: rgba(255, 255, 255, 0.7);
-  width: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  width: 18px;
 }
 
 .trimHandle.left {
   left: 0;
-  border-radius: 4px 0 0 4px;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
 
 .trimHandle.right {
   right: 0;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 .trimHandle::after {
@@ -163,7 +165,7 @@
 }
 
 .deleteButton:hover {
-  background: #c42b1c;
+  background: var(--color-error);
   transform: scale(1.15);
 }
 

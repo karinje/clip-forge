@@ -8,7 +8,7 @@ const logger = new Logger('ExportHandlers');
 
 export function registerExportHandlers() {
   // Single clip export with trim
-  ipcMain.handle(IPC_CHANNELS.VIDEO_EXPORT, async (_event, options) => {
+  ipcMain.handle(IPC_CHANNELS.VIDEO_EXPORT, async (event, options) => {
     try {
       const { inputPath, outputPath, trimStart, trimEnd, format, quality } = options;
       
@@ -30,10 +30,13 @@ export function registerExportHandlers() {
         outputPath,
         trimStart: actualTrimStart,
         trimEnd: actualTrimEnd,
+        duration: exportDuration,
         format,
         quality,
         onProgress: (percent) => {
           logger.info(`Export progress: ${percent.toFixed(2)}%`);
+          // Send progress update to renderer
+          event.sender.send('export-progress', percent);
         },
       });
       
@@ -53,28 +56,52 @@ export function registerExportHandlers() {
   });
   
   // Multiple clips export (concatenate)
-  ipcMain.handle(IPC_CHANNELS.VIDEO_EXPORT_MULTIPLE, async (_event, options) => {
+  ipcMain.handle(IPC_CHANNELS.VIDEO_EXPORT_MULTIPLE, async (event, options) => {
     try {
       const { clips, outputPath, format, quality } = options;
       
       logger.info('Exporting multiple clips:', { clipCount: clips.length, outputPath });
       
-      // For MVP, we'll just export the first clip
-      // Full multi-clip concatenation will be implemented later
       if (clips.length === 1) {
+        // Single clip - use direct export
         const clip = clips[0];
+        
+        // Get metadata to calculate duration
+        const metadata = await metadataService.getVideoMetadata(clip.filePath);
+        const clipDuration = metadata.duration - clip.trimStart - clip.trimEnd;
         
         await ffmpegService.exportVideo({
           inputPath: clip.filePath,
           outputPath,
           trimStart: clip.trimStart,
           trimEnd: clip.trimEnd,
+          duration: clipDuration,
           format,
           quality,
+          onProgress: (percent) => {
+            logger.info(`Export progress: ${percent.toFixed(2)}%`);
+            event.sender.send('export-progress', percent);
+          },
         });
       } else {
-        // TODO: Implement proper concatenation with trims
-        throw new Error('Multi-clip export not yet implemented. Please export one clip at a time.');
+        // Multiple clips - concatenate with trims
+        logger.info('Concatenating multiple clips with trims');
+        
+        await ffmpegService.exportMultipleClips({
+          clips: clips.map((clip: any) => ({
+            filePath: clip.filePath,
+            trimStart: clip.trimStart,
+            trimEnd: clip.trimEnd,
+            duration: clip.duration,
+          })),
+          outputPath,
+          format,
+          quality,
+          onProgress: (percent) => {
+            logger.info(`Export progress: ${percent.toFixed(2)}%`);
+            event.sender.send('export-progress', percent);
+          },
+        });
       }
       
       logger.info('Multi-clip export successful:', outputPath);
@@ -92,5 +119,7 @@ export function registerExportHandlers() {
     }
   });
 }
+
+
 
 
