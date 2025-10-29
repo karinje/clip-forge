@@ -31,17 +31,38 @@
     "files": [
       "dist/**/*",
       "node_modules/**/*",
+      "!node_modules/@ffmpeg-installer/darwin-x64",
+      "!node_modules/@ffmpeg-installer/linux-*",
+      "!node_modules/@ffmpeg-installer/win32-*",
+      "!node_modules/@ffprobe-installer/darwin-x64",
+      "!node_modules/@ffprobe-installer/linux-*",
+      "!node_modules/@ffprobe-installer/win32-*",
       "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/@ffmpeg-installer/ffmpeg/**/*",
+      "node_modules/@ffmpeg-installer/darwin-arm64/**/*",
+      "node_modules/@ffprobe-installer/ffprobe/**/*",
+      "node_modules/@ffprobe-installer/darwin-arm64/**/*"
     ],
     "mac": {
       "category": "public.app-category.video",
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "win": {
-      "target": ["nsis", "portable"]
+      "target": [
+        "nsis",
+        "portable"
+      ]
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "category": "Video"
     }
   },
@@ -72,6 +93,7 @@
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
     "fluent-ffmpeg": "^2.1.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

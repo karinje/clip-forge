@@ -95,9 +95,71 @@ npm run build
 npm run package
 ```
 
-### Installation from DMG
+### Installing from DMG (macOS)
 
-Download `ClipForge-1.0.0-arm64.dmg` from the `out/` directory and double-click to install.
+1. **Open the DMG**:
+   ```bash
+   open out/ClipForge-1.0.0-arm64.dmg
+   ```
+   Or double-click `ClipForge-1.0.0-arm64.dmg` in Finder
+
+2. **Install the App**:
+   - A Finder window will open showing ClipForge.app
+   - Drag `ClipForge.app` to your Applications folder
+   - Or run directly from the DMG (not recommended for permanent use)
+
+3. **First Launch**:
+   - Open ClipForge from Applications
+   - If you see "App is from an unidentified developer":
+     - Right-click ClipForge.app → Open
+     - Click "Open" in the security dialog
+     - This only needs to be done once
+
+4. **Verify Installation**:
+   - App should launch without DevTools
+   - No console logs in production mode
+   - Import a video to test functionality
+
+## Testing the Packaged DMG
+
+### Before Distribution:
+1. **Mount the DMG**:
+   ```bash
+   open out/ClipForge-1.0.0-arm64.dmg
+   ```
+
+2. **Copy to Applications** (simulates user installation):
+   ```bash
+   cp -r /Volumes/ClipForge/ClipForge.app /Applications/
+   ```
+
+3. **Launch from Applications**:
+   ```bash
+   open /Applications/ClipForge.app
+   ```
+
+4. **Test Workflow**:
+   - Import a video file
+   - Add to timeline
+   - Trim the clip
+   - Export to desktop
+   - Verify no DevTools appear
+   - Verify no console logs
+
+5. **Clean Up After Testing**:
+   ```bash
+   rm -rf /Applications/ClipForge.app
+   hdiutil detach /Volumes/ClipForge
+   ```
+
+### Distribution Checklist:
+- ✅ DMG opens without errors
+- ✅ App icon visible in DMG window
+- ✅ Drag-to-Applications works
+- ✅ First launch security prompt handled
+- ✅ All features work as expected
+- ✅ Export creates valid video files
+- ✅ No crashes during normal use
 
 ## Project Structure
 
@@ -215,10 +277,38 @@ MIT
 
 ## System Requirements
 
-- macOS 11.0 or later (arm64/Apple Silicon optimized)
-- 4GB RAM minimum
+### macOS (Current Build)
+- macOS 11.0 or later
+- Apple Silicon (M1/M2/M3) - arm64 architecture
+- 4GB RAM minimum (8GB recommended)
 - 500MB free disk space
-- Intel/Windows builds coming soon
+- Screen resolution: 1280x800 minimum
+
+### Future Builds
+- Intel Mac (x64) - Coming soon
+- Windows 10/11 (x64) - Coming soon
+- Linux (AppImage/deb) - Planned
+
+## Troubleshooting
+
+### "App is damaged" or "Cannot open" error
+This happens because the app isn't notarized by Apple. Solution:
+1. Right-click ClipForge.app → Open
+2. Click "Open" in the security dialog
+3. Or disable Gatekeeper temporarily (not recommended):
+   ```bash
+   sudo xattr -cr /Applications/ClipForge.app
+   ```
+
+### FFmpeg errors during export
+- Make sure the video file isn't corrupted
+- Try a different video format (MP4, MOV, WebM)
+- Check available disk space for export
+
+### App won't launch
+- Check Console.app for error messages
+- Try removing and reinstalling from DMG
+- Verify macOS version is 11.0 or later
 
 ## Acknowledgments
 

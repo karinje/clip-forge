@@ -32,6 +32,20 @@ Thumbs.db
 tmp/
 temp/
 
+# Video files (users provide their own)
+*.mp4
+*.mov
+*.webm
+*.avi
+*.mkv
+*.m4v
+*.flv
+
+# Cache and user data
+cache/
+.cache/
+user-data/
+
 # Package manager
 package-lock.json
 yarn.lock

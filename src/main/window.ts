@@ -15,10 +15,8 @@ export function createWindow(): BrowserWindow {
   // Load the index.html from the renderer
   win.loadFile(path.join(__dirname, '../renderer/index.html'));
   
-  // Open DevTools in development
-  if (process.env.NODE_ENV === 'development') {
-    win.webContents.openDevTools();
-  }
+  // TEMPORARY: Always open DevTools to debug
+  win.webContents.openDevTools();
 
   return win;
 }

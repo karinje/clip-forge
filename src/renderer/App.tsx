@@ -10,15 +10,12 @@ export const App: React.FC = () => {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const { exportVideo, isExporting, progress, error } = useVideoExport();
   
-  // Clear old localStorage once (version mismatch workaround)
-  useEffect(() => {
-    const hasCleared = localStorage.getItem('clipforge-cleared-v3');
-    if (!hasCleared) {
-      localStorage.removeItem('clipforge-timeline');
-      localStorage.removeItem('clipforge-project');
-      localStorage.setItem('clipforge-cleared-v3', 'true');
-    }
-  }, []);
+  const handleReset = () => {
+    // Clear all localStorage (cached state, settings, etc.)
+    localStorage.clear();
+    // Reload the app to start fresh
+    window.location.reload();
+  };
   
   const handleExportClick = () => {
     setShowExportDialog(true);
@@ -38,7 +35,11 @@ export const App: React.FC = () => {
       <header className="app-header">
         <div className="app-logo">ClipForge</div>
         <div className="header-spacer"></div>
-        <button className="header-button" onClick={() => window.location.reload()}>
+        <button 
+          className="header-button" 
+          onClick={handleReset}
+          title="Clear all clips and reset app state"
+        >
           Reset
         </button>
         <button className="header-button primary" onClick={handleExportClick}>

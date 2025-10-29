@@ -3,12 +3,30 @@ import { app } from 'electron';
 import fs from 'fs';
 
 export function getFFmpegPath(): string {
-  // Always use @ffmpeg-installer/ffmpeg for now
-  // This works in both dev and when running via npm start
-  // When we package with electron-builder, we'll need to bundle the binary
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
-  return ffmpegInstaller.path;
+  let ffmpegPath = ffmpegInstaller.path;
+  
+  // When packaged with electron-builder, FFmpeg is unpacked from asar
+  // The path will be in app.asar.unpacked instead of app.asar
+  if (ffmpegPath.includes('app.asar')) {
+    ffmpegPath = ffmpegPath.replace('app.asar', 'app.asar.unpacked');
+  }
+  
+  return ffmpegPath;
+}
+
+export function getFFprobePath(): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const ffprobeInstaller = require('@ffprobe-installer/ffprobe');
+  let ffprobePath = ffprobeInstaller.path;
+  
+  // When packaged with electron-builder, FFprobe is unpacked from asar
+  if (ffprobePath.includes('app.asar')) {
+    ffprobePath = ffprobePath.replace('app.asar', 'app.asar.unpacked');
+  }
+  
+  return ffprobePath;
 }
 
 export function getTempDir(): string {

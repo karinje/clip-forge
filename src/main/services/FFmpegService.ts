@@ -1,5 +1,5 @@
 import ffmpeg from 'fluent-ffmpeg';
-import { getFFmpegPath, getTempDir } from '../utils/paths';
+import { getFFmpegPath, getFFprobePath, getTempDir } from '../utils/paths';
 import { Logger } from '../utils/logger';
 import path from 'path';
 
@@ -46,8 +46,11 @@ export interface ExportMultipleClipsOptions {
 export class FFmpegService {
   constructor() {
     const ffmpegPath = getFFmpegPath();
+    const ffprobePath = getFFprobePath();
     logger.info('Setting FFmpeg path to:', ffmpegPath);
+    logger.info('Setting FFprobe path to:', ffprobePath);
     ffmpeg.setFfmpegPath(ffmpegPath);
+    ffmpeg.setFfprobePath(ffprobePath);
   }
 
   async testInstallation(): Promise<boolean> {

@@ -11,6 +11,7 @@ const mainConfig = {
   },
   externals: {
     '@ffmpeg-installer/ffmpeg': 'commonjs @ffmpeg-installer/ffmpeg',
+    '@ffprobe-installer/ffprobe': 'commonjs @ffprobe-installer/ffprobe',
     'fluent-ffmpeg': 'commonjs fluent-ffmpeg',
   },
   module: {
