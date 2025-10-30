@@ -6,38 +6,81 @@ A modern desktop video editor built with Electron, React, TypeScript, and FFmpeg
 
 ClipForge is a professional desktop video editor featuring a dark, modern UI with powerful video editing capabilities. Import videos, trim clips, arrange them on a timeline, and export high-quality MP4 files with real-time progress feedback.
 
-## 🎉 MVP Complete - All Core Features Implemented!
+## 🎉 Full Product Complete - Professional Video Editor!
 
-### ✅ Completed MVP Features
-- ✅ **Desktop Application** - Native macOS app with production build
+### ✅ Core Editing Features
+- ✅ **Desktop Application** - Native macOS app with production build (130 MB DMG)
 - ✅ **Video Import** - Drag & drop or file picker (MP4, MOV, WebM)
-- ✅ **Timeline View** - Visual clip representation with multiple clips support
+- ✅ **Audio Import** - MP3, WAV, AAC, M4A, FLAC, OGG support
+- ✅ **Timeline View** - Multi-track timeline with visual clip representation
 - ✅ **Video Preview Player** - Full playback controls (play/pause, seek, scrub)
 - ✅ **Trim Functionality** - Visual trim handles with in/out points
-- ✅ **Single-Clip Export** - Export individual trimmed clips to MP4
-- ✅ **Multi-Clip Export** - Concatenate multiple clips into one video
-- ✅ **Export Progress** - Real-time progress bar with percentage
-- ✅ **Success/Error Feedback** - Clear notifications with output path
-- ✅ **Modern UI** - Professional dark theme with CSS variables
-- ✅ **Production Build** - No DevTools, no console logs
-- ✅ **Native Packaging** - Installable DMG for macOS (123 MB)
-- ✅ **Quality Settings** - High (1080p), Medium (720p), Low (480p)
+- ✅ **Split Clips** - Split at playhead (Cmd+K) with Loom-style behavior
+- ✅ **Duplicate Clips** - Clone clips to end of track (Cmd+D)
+- ✅ **Delete Regions** - Shift+Arrow selection for precise deletion
+- ✅ **Timeline Zoom** - Zoom in/out/fit with horizontal scrolling
+- ✅ **Snap-to-Grid** - Snap to grid/clip edges (Cmd+Shift+S)
+
+### 🎥 Recording Features
+- ✅ **Screen Recording** - Full screen or window capture with audio
+- ✅ **Webcam Recording** - Camera recording with system camera access
+- ✅ **Screen + Camera (PiP)** - **NEW!** Simultaneous capture with live preview
+  - Real-time PiP composition during recording
+  - Camera overlay at 25% scale (bottom-right)
+  - See exactly what you're recording (WYSIWYG)
+  - Combined microphone audio
+  - Canvas-based composition at 30 FPS
+- ✅ **Save to Timeline** - Recordings automatically added to project
+
+### 🎵 Audio Features
+- ✅ **Audio Import** - MP3 and other audio formats
+- ✅ **Audio-Only Mode** - Extract audio from video clips
+- ✅ **Volume Control** - Per-track volume (0-200%) with sliders
+- ✅ **Audio Mixing** - Mix multiple audio tracks in export
+- ✅ **Track Mute/Solo** - Mute or solo individual tracks
+- ✅ **Background Music** - Add music with adjustable volume
+
+### 📤 Export Features
+- ✅ **Multi-Track Export** - Picture-in-Picture composition
+- ✅ **Audio Mixing** - Mix main video + overlay audio tracks
+- ✅ **Export Settings** - Persistent configuration (format, quality, duration mode)
+- ✅ **Preview Composition** - Render preview before final export
+- ✅ **Progress Tracking** - Real-time progress bar with percentage
+- ✅ **Quality Options** - High (1080p), Medium (720p), Low (480p)
 - ✅ **Format Options** - MP4, WebM, MOV export formats
+- ✅ **PiP Configuration** - Adjustable position and scale
+- ✅ **Duration Modes** - Main track, shortest, or longest duration
 
-### 🚀 Advanced Features
-- ✅ **Audio Handling** - Gracefully handles videos with or without audio
-- ✅ **Frame Rate Normalization** - 30fps output for smooth playback
-- ✅ **Resolution Scaling** - Automatic scaling with aspect ratio preservation
-- ✅ **Complex Filters** - FFmpeg complex filter chains for seamless concatenation
+### ⌨️ Keyboard Shortcuts
+- ✅ **Space** - Play/pause
+- ✅ **J/L** - Rewind/Forward 5 seconds
+- ✅ **[ / ]** - Jump to clip edges
+- ✅ **Cmd+K** - Split clip at playhead
+- ✅ **Cmd+D** - Duplicate clip
+- ✅ **Cmd+E** - Export video
+- ✅ **Cmd+?** - Show shortcuts help
+- ✅ **Shift+Arrow** - Extend selection for deletion
+- ✅ **Escape** - Clear selection
 
-### 📋 Planned Features (Post-MVP)
-- 🎥 Screen recording with audio capture
-- 📹 Webcam recording
-- 🔄 Drag-and-drop clip reordering
-- ✂️ Clip splitting at playhead
-- 📊 Multi-track composition (Picture-in-Picture)
-- ⌨️ Keyboard shortcuts
-- 💾 Project save/load
+### 🎨 UI/UX Features
+- ✅ **Professional Dark Theme** - Modern, polished interface
+- ✅ **Collapsible Sidebar** - Toggle media library visibility
+- ✅ **Resizable Panels** - Drag borders to adjust layout
+- ✅ **Thumbnail Previews** - FFmpeg-generated thumbnails
+- ✅ **Time Display Toggle** - MM:SS.CC or MM:SS format
+- ✅ **Status Bar** - Playhead time, clip info, zoom level
+- ✅ **Tooltips** - Helpful hints on all interactive elements
+- ✅ **Shortcuts Modal** - Quick reference guide (Cmd+?)
+
+### 📋 Stretch Goals (Optional)
+- ⏳ **Video Speed Adjustment** - Slow motion and fast forward
+- ⏳ **Text Overlays** - Custom text with fonts and positioning
+- ⏳ **Transitions** - Fade, slide between clips
+- ⏳ **Audio Fade Effects** - Fade in/out
+- ⏳ **Filters & Effects** - Brightness, contrast, saturation
+- ⏳ **Export Presets** - YouTube, Instagram, TikTok optimized
+- ⏳ **Project Save/Load** - Persistent project files
+- ⏳ **Undo/Redo** - Command history
 
 ## Tech Stack
 
@@ -181,33 +224,58 @@ clipforge/
 
 ## Usage
 
-1. **Import Videos**: 
-   - Click the "Import" button in the Media Library
-   - Or drag & drop video files directly into the app
-   - Supports MP4, MOV, and WebM formats
+### Recording
+1. **Screen Recording**:
+   - Click the "Record" button (top left)
+   - Select "Screen" tab
+   - Choose a screen or window to record
+   - Click "Start Recording"
+   - Click "Stop Recording" when done
+   - Recording automatically added to timeline
 
-2. **Add to Timeline**:
-   - Select a clip in the Media Library
-   - Drag it to the timeline at the bottom
+2. **Webcam Recording**:
+   - Click "Record" → "Webcam" tab
+   - Click "Start Recording"
+   - Recording appears in timeline when stopped
 
-3. **Trim Clips**:
-   - Select a clip on the timeline
-   - Drag the left handle to set start point
-   - Drag the right handle to set end point
-   - The preview player updates in real-time
+3. **Screen + Camera (PiP)**:
+   - Click "Record" → "Screen + Camera" tab
+   - Select screen source
+   - See live PiP preview during recording
+   - Camera appears in bottom-right at 25% scale
+   - Perfect for tutorials and presentations!
 
-4. **Preview**:
-   - Click play/pause button
-   - Scrub through timeline with seek bar
-   - Preview respects all trim points
+### Editing
+4. **Import Videos**: 
+   - Click "Import" in Media Library
+   - Or drag & drop files into the app
+   - Supports MP4, MOV, WebM, MP3, WAV, etc.
 
-5. **Export**:
-   - Click "Export Video" in the header
-   - Choose output location and filename
-   - Select quality (High/Medium/Low)
-   - Select format (MP4/WebM/MOV)
-   - Watch real-time progress bar
-   - Get success notification with output path
+5. **Timeline Editing**:
+   - Drag clips from library to timeline
+   - Use trim handles to adjust start/end points
+   - **Cmd+K** to split clip at playhead
+   - **Shift+Arrow** to select region, **Delete** to remove
+   - Add overlay tracks for PiP or audio
+
+6. **Audio**:
+   - Import MP3 files for background music
+   - Toggle audio-only mode on video clips
+   - Adjust volume per track (0-200%)
+   - Mute or solo individual tracks
+
+### Export
+7. **Configure Export**:
+   - Click "Export Settings" (gear icon)
+   - Set format, quality, PiP position/scale
+   - Settings persist across sessions
+
+8. **Preview & Export**:
+   - Click "Preview" to render test video
+   - Click "Export Video" for final output
+   - Choose location and filename
+   - Watch real-time progress
+   - Success notification with file path
 
 ## Screenshots
 
@@ -219,7 +287,9 @@ Real-time progress feedback with quality and format options.
 
 ## Development Status
 
-### ✅ Completed (MVP - October 29, 2024)
+### ✅ Completed (Full Product - October 30, 2025)
+
+**MVP Phase (October 28-29)**:
 - **PR-00**: Project Bootstrap & Environment Setup
 - **PR-01**: FFmpeg Integration & Build Configuration
 - **PR-02**: Video Import System
@@ -229,24 +299,35 @@ Real-time progress feedback with quality and format options.
 - **PR-06**: Single-Clip & Multi-Clip Export with FFmpeg
 - **PR-07**: Production Build & MVP Polish
 
-### 📋 Planned (Post-MVP)
+**Full Product Phase (October 30)**:
 - **PR-08**: Multi-Clip Timeline & Sequencing
-- **PR-09**: Enhanced Multi-Clip Export
-- **PR-10**: Screen Recording
-- **PR-11**: Webcam Recording
-- **PR-12**: Multi-Track Timeline UI
-- **PR-13**: Multi-Track Export with Composition
+- **PR-09**: Multi-Clip Export with Concatenation
+- **PR-10**: Screen Recording with desktopCapturer
+- **PR-11**: Webcam Recording with MediaRecorder
+- **PR-12**: Multi-Track Timeline UI (up to 3 tracks)
+- **PR-13**: Multi-Track Export with PiP Composition
+- **PR-14**: Split, Duplicate, Delete Trimmed Region
+- **PR-15**: Thumbnails, Snap, Solo Track, Shortcuts
+- **PR-16**: Audio Overlay & Export Modal Polish
+- **Export Settings**: Persistent configuration panel
+- **Screen + Camera**: Simultaneous PiP recording with live preview
+
+### ⏳ Optional Enhancements
+- **PR-17**: Project Save/Load (JSON format)
+- **PR-18**: Audio fade effects, enhanced shortcuts
+- **PR-19**: Text overlays, transitions, filters
+- **Video Speed Adjustment**: Slow motion, fast forward
 
 See `docs/ClipForge_Task_Breakdown.md` for detailed task breakdown.
 
-## Known Limitations (MVP)
+## Known Limitations
 
-- Multi-track composition not yet implemented (single track only)
-- Screen recording not yet implemented (planned for post-MVP)
-- Webcam recording not yet implemented (planned for post-MVP)
-- No undo/redo functionality yet
-- No project save/load yet
-- Default Electron icon (custom icon planned)
+- Project save/load not implemented (uses session storage)
+- No undo/redo functionality yet (manual clip management)
+- Default Electron icon (custom icon not critical)
+- Single platform build (macOS arm64 only)
+- No video speed adjustment yet
+- No text overlays or transitions yet
 
 ## Contributing
 
@@ -316,7 +397,35 @@ Built with Electron, React, TypeScript, FFmpeg, and dedication to quality UX.
 
 ## Version History
 
-### v1.0.0 (October 29, 2024) - MVP Release
+### v1.2.0 (October 30, 2025) - Screen + Camera PiP Release
+- **NEW**: Screen + Camera simultaneous recording with live PiP preview
+- Canvas-based real-time composition at 30 FPS
+- Camera overlay at 25% scale with white border
+- WYSIWYG recording experience
+- Fixed canvas rendering for live preview visibility
+
+### v1.1.0 (October 30, 2025) - Audio & Export Polish
+- Audio import (MP3, WAV, AAC, M4A, FLAC, OGG)
+- Audio-only mode for video overlay tracks
+- Per-track volume control (0-200%)
+- Multi-track audio mixing in export
+- Export Settings panel with persistence
+- Preview Composition feature
+- Duration mode options (main/shortest/longest)
+- Header layout optimization
+
+### v1.0.0 (October 29, 2025) - Full Product Release
+- Multi-track timeline (up to 3 tracks)
+- Screen recording with desktopCapturer
+- Webcam recording with MediaRecorder
+- Multi-track PiP export composition
+- Split, duplicate, delete trimmed regions
+- Keyboard shortcuts (J/L/[]/Cmd+K/D/E/?)
+- Thumbnails, snap-to-grid, time display toggle
+- Solo track, status bar, shortcuts modal
+- Professional dark-themed UI
+
+### v0.1.0 (October 28, 2025) - MVP Release
 - Initial release with core video editing features
 - Import, trim, timeline, export functionality
 - Multi-clip concatenation support

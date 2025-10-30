@@ -51,9 +51,10 @@
 
 **What's Working Now:**
 - ✅ Electron app launches with React UI (no DevTools in production)
-- ✅ Video import via file picker and drag-and-drop
+- ✅ Video import via file picker and drag-and-drop (MP4, MOV, WebM)
+- ✅ Audio import (MP3, WAV, AAC, M4A, FLAC, OGG)
 - ✅ FFmpeg + FFprobe metadata extraction (duration, resolution, format, codec, fps)
-- ✅ Media library with clip management
+- ✅ Media library with thumbnail previews
 - ✅ Video preview player with playback controls
 - ✅ Play/pause, seek, and timeline scrubbing
 - ✅ Zustand state management with localStorage persistence
@@ -64,13 +65,24 @@
 - ✅ Multi-track timeline with PiP overlay export
 - ✅ Screen recording with desktopCapturer
 - ✅ Webcam recording with MediaRecorder
+- ✅ **Screen + Camera recording with live PiP preview (NEW!)**
+- ✅ Audio-only mode for video overlay tracks
+- ✅ Per-track volume control (0-200%)
+- ✅ Multi-track audio mixing in export
 - ✅ Split clip at playhead (Loom model - clips stay at same position)
 - ✅ Duplicate clip to end of track
 - ✅ Delete trimmed region (inverse trim - keeps untrimmed segments)
-- ✅ Loom-style toolbar with Split, Delete, Duplicate buttons
+- ✅ Shift+Arrow selection for precise deletion (gray overlay)
+- ✅ Loom-style toolbar with logical control grouping
 - ✅ Timeline zoom controls (zoom in, zoom out, zoom to fit)
-- ✅ Horizontal timeline scrollbar when zoomed
-- ✅ Keyboard shortcuts (Delete, Shift+Delete, Cmd+K, Cmd+D)
+- ✅ Snap-to-grid and clip edges (Cmd+Shift+S)
+- ✅ Time display toggle (MM:SS.CC or MM:SS)
+- ✅ Solo track functionality
+- ✅ Status bar (playhead time, selected clip, zoom, clip count)
+- ✅ Keyboard shortcuts (J/L/[]/Cmd+K/D/E/?)
+- ✅ Shortcuts help modal (Cmd+?)
+- ✅ Export Settings panel with persistence
+- ✅ Preview Composition feature
 - ✅ Real-time export progress feedback via IPC
 - ✅ Modern, professional dark-themed UI
 - ✅ Production build configuration (no DevTools/console logs)
