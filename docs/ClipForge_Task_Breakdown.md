@@ -179,12 +179,12 @@
 - ✅ **Export Settings Panel**: Persistent export configuration with dropdown UI
 - ✅ **Preview Composition**: Render full composition to temporary file before export
 - ✅ **Header Layout Optimization**: Logical workflow order (Record → Export Settings → Export Video → Reset)
+- ✅ **Screen + Camera Recording**: Simultaneous screen and webcam capture with live PiP preview (October 30, 2025)
 
 **Remaining Tasks**
 - ⏳ **PR-17**: Project Save/Load (JSON file format) `[OPTIONAL - NICE TO HAVE]`
 - ⏳ **PR-18**: Easy Stretch Goals (Audio fade effects, Enhanced shortcuts) `[STRETCH - EASY]`
 - ⏳ **PR-19**: Advanced Stretch Goals (Text, Transitions, Effects) `[STRETCH - ADVANCED]`
-- ⏳ **Camera + Screen PiP Recording**: Simultaneous recording with live preview `[STRETCH]`
 - ⏳ **Video Speed Adjustment**: Slow motion and fast forward `[STRETCH]`
 
 ### 📦 Deliverables Status
@@ -2528,6 +2528,79 @@ clipforge/
 - ✅ Professional appearance with consistent styling
 
 **Deliverable**: Persistent export settings with accessible UI and logical button layout
+
+---
+
+### Screen + Camera Recording with Live PiP Preview `[COMPLETED - October 30, 2025]`
+**Time Estimate**: 2-3 hours  
+**Priority**: HIGH - Advanced recording feature  
+**Risk Level**: MEDIUM (Canvas composition complexity)
+
+**Status**: ✅ **COMPLETED** (2025-10-30)
+
+**Tasks**:
+- [x] Add third recording mode: "Screen + Camera"
+- [x] Capture screen stream using desktopCapturer
+- [x] Capture webcam stream simultaneously
+- [x] Create Canvas element for real-time composition
+- [x] Implement canvas drawing loop with requestAnimationFrame
+- [x] Composite screen (full size) + camera (25% PiP, bottom-right)
+- [x] Draw white border around PiP for visibility
+- [x] Capture canvas stream at 30 FPS
+- [x] Mix microphone audio with canvas stream
+- [x] Show live PiP preview during recording
+- [x] Clean up all streams and animation on stop
+- [x] Update UI with third tab for "Screen + Camera"
+- [x] Handle camera permission errors gracefully
+
+**Implementation Details**:
+- **Canvas Composition**: Uses HTML5 Canvas to composite both video streams in real-time
+- **PiP Configuration**: Camera scaled to 25% of screen size, positioned bottom-right with 20px padding
+- **Frame Rate**: Canvas captured at 30 FPS for smooth recording
+- **Audio Mixing**: Microphone audio added to canvas stream
+- **Live Preview**: Canvas element displayed during recording showing exact output
+- **Resource Management**: All streams (screen, camera, audio, canvas) properly cleaned up on stop
+- **Error Handling**: Graceful fallback if camera or audio unavailable
+
+**Technical Approach**:
+```typescript
+// Two separate video elements (hidden) for screen and camera
+screenVideoRef.current.srcObject = screenStream;
+cameraVideoRef.current.srcObject = cameraStream;
+
+// Canvas draws both frames continuously
+const drawFrame = () => {
+  ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(cameraVideo, pipX, pipY, pipWidth, pipHeight);
+  ctx.strokeRect(pipX, pipY, pipWidth, pipHeight); // Border
+  requestAnimationFrame(drawFrame);
+};
+
+// Capture canvas stream and add audio
+const canvasStream = canvas.captureStream(30);
+audioTracks.forEach(track => canvasStream.addTrack(track));
+```
+
+**Acceptance Criteria**:
+- ✅ Third tab "Screen + Camera" appears in recording modal
+- ✅ Can select screen source for screen+camera mode
+- ✅ Both screen and camera streams captured simultaneously
+- ✅ Live PiP preview visible during recording (canvas)
+- ✅ Camera appears as overlay in bottom-right (25% scale)
+- ✅ White border visible around camera PiP
+- ✅ Microphone audio captured and mixed
+- ✅ Recorded file saved with both video streams composed
+- ✅ All streams stopped when recording ends
+- ✅ No memory leaks from animation loop
+
+**User Benefits**:
+- Professional screen recordings with camera presence
+- See exactly what will be recorded (WYSIWYG)
+- No need for post-recording composition
+- Ideal for tutorials, presentations, and vlogs
+- Similar to Loom, ScreenFlow, and other screen recorders
+
+**Deliverable**: Fully functional screen + camera recording with live PiP preview
 
 ---
 

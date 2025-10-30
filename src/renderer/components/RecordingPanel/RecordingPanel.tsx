@@ -13,7 +13,7 @@ interface RecordingSource {
 
 export const RecordingPanel: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [recordingType, setRecordingType] = useState<'screen' | 'webcam'>('screen');
+  const [recordingType, setRecordingType] = useState<'screen' | 'webcam' | 'screen-camera'>('screen');
   const [sources, setSources] = useState<RecordingSource[]>([]);
   const [selectedSource, setSelectedSource] = useState<RecordingSource | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -26,6 +26,12 @@ export const RecordingPanel: React.FC = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const recordingTimeRef = useRef<number>(0); // Store final recording time
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const screenVideoRef = useRef<HTMLVideoElement>(null);
+  const cameraVideoRef = useRef<HTMLVideoElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
   
   const addClip = useProjectStore(state => state.addClip);
   const addClipToTimeline = useTimelineStore(state => state.addClipToTimeline);
@@ -33,7 +39,7 @@ export const RecordingPanel: React.FC = () => {
   
   // Load sources when panel opens for screen recording
   useEffect(() => {
-    if (isOpen && recordingType === 'screen') {
+    if (isOpen && (recordingType === 'screen' || recordingType === 'screen-camera')) {
       loadSources();
     }
   }, [isOpen, recordingType]);
@@ -139,7 +145,220 @@ export const RecordingPanel: React.FC = () => {
     }
   };
   
-  const startRecording = (mediaStream: MediaStream) => {
+  const startScreenCameraRecording = async () => {
+    if (!selectedSource) {
+      console.error('No source selected');
+      return;
+    }
+    
+    console.log('Starting screen + camera recording with source:', selectedSource.id);
+    
+    try {
+      setError(null);
+      
+      // Get screen stream
+      console.log('Requesting screen stream...');
+      const screenStream = await (navigator.mediaDevices as any).getUserMedia({
+        audio: false,
+        video: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: selectedSource.id,
+          }
+        }
+      });
+      console.log('Screen stream obtained:', screenStream.getVideoTracks()[0].label);
+      
+      // Get webcam stream
+      console.log('Requesting webcam stream...');
+      const cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 360 }
+        },
+        audio: false  // We'll get audio from microphone separately
+      });
+      console.log('Camera stream obtained:', cameraStream.getVideoTracks()[0].label);
+      
+      // Get audio stream from microphone
+      let audioStream: MediaStream | null = null;
+      try {
+        console.log('Requesting microphone stream...');
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log('Audio stream obtained');
+      } catch (audioErr) {
+        console.warn('No microphone available, recording without audio');
+      }
+      
+      // Store streams in refs
+      screenStreamRef.current = screenStream;
+      cameraStreamRef.current = cameraStream;
+      
+      // Setup video elements for composition
+      if (!screenVideoRef.current) {
+        screenVideoRef.current = document.createElement('video');
+      }
+      if (!cameraVideoRef.current) {
+        cameraVideoRef.current = document.createElement('video');
+      }
+      
+      screenVideoRef.current.srcObject = screenStream;
+      cameraVideoRef.current.srcObject = cameraStream;
+      
+      console.log('Waiting for video metadata to load...');
+      
+      // Wait for both videos to load
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          const video = screenVideoRef.current!;
+          if (video.readyState >= 2) {
+            // Metadata already loaded
+            console.log('Screen video already loaded');
+            video.play();
+            resolve();
+          } else {
+            video.onloadedmetadata = () => {
+              console.log('Screen video metadata loaded');
+              video.play();
+              resolve();
+            };
+          }
+        }),
+        new Promise<void>((resolve) => {
+          const video = cameraVideoRef.current!;
+          if (video.readyState >= 2) {
+            // Metadata already loaded
+            console.log('Camera video already loaded');
+            video.play();
+            resolve();
+          } else {
+            video.onloadedmetadata = () => {
+              console.log('Camera video metadata loaded');
+              video.play();
+              resolve();
+            };
+          }
+        })
+      ]);
+      
+      console.log('Both videos loaded, starting composition');
+      
+      // Start compositing to canvas
+      startCanvasComposition(screenStream, cameraStream, audioStream);
+    } catch (err: any) {
+      console.error('Error in startScreenCameraRecording:', err);
+      setError(err.message || 'Failed to start screen + camera recording');
+      // Clean up any streams that were created
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(track => track.stop());
+        screenStreamRef.current = null;
+      }
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach(track => track.stop());
+        cameraStreamRef.current = null;
+      }
+    }
+  };
+  
+  const startCanvasComposition = (
+    screenStream: MediaStream,
+    cameraStream: MediaStream,
+    audioStream: MediaStream | null
+  ) => {
+    // Set recording state first so canvas JSX element gets rendered
+    setIsRecording(true);
+    
+    // Wait for next frame to ensure canvas is rendered
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        continueCanvasComposition(screenStream, cameraStream, audioStream);
+      });
+    });
+  };
+  
+  const continueCanvasComposition = (
+    screenStream: MediaStream,
+    cameraStream: MediaStream,
+    audioStream: MediaStream | null
+  ) => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.error('Canvas element not found!');
+      setError('Canvas element not available');
+      setIsRecording(false);
+      return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setError('Failed to create canvas context');
+      setIsRecording(false);
+      return;
+    }
+    
+    // Get screen dimensions from video
+    const screenVideo = screenVideoRef.current!;
+    const cameraVideo = cameraVideoRef.current!;
+    
+    // Set canvas size to screen video size
+    canvas.width = screenVideo.videoWidth || 1920;
+    canvas.height = screenVideo.videoHeight || 1080;
+    
+    console.log('Canvas composition started:', {
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+      screenVideoWidth: screenVideo.videoWidth,
+      screenVideoHeight: screenVideo.videoHeight
+    });
+    
+    // Calculate PiP dimensions (25% of screen size, bottom-right)
+    const pipScale = 0.25;
+    const pipWidth = canvas.width * pipScale;
+    const pipHeight = canvas.height * pipScale;
+    const pipX = canvas.width - pipWidth - 20; // 20px padding from right
+    const pipY = canvas.height - pipHeight - 20; // 20px padding from bottom
+    
+    // Animation loop to composite streams
+    const drawFrame = () => {
+      if (!screenStreamRef.current) {
+        // Stop animation if recording stopped
+        return;
+      }
+      
+      // Draw screen video (full size)
+      ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+      
+      // Draw camera video (PiP in bottom-right)
+      ctx.drawImage(cameraVideo, pipX, pipY, pipWidth, pipHeight);
+      
+      // Draw border around PiP
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(pipX, pipY, pipWidth, pipHeight);
+      
+      animationFrameRef.current = requestAnimationFrame(drawFrame);
+    };
+    
+    drawFrame();
+    
+    // Capture canvas stream
+    console.log('Capturing canvas stream at 30 FPS...');
+    const canvasStream = canvas.captureStream(30); // 30 FPS
+    console.log('Canvas stream created, video tracks:', canvasStream.getVideoTracks().length);
+    
+    // Add audio track if available
+    if (audioStream) {
+      const audioTracks = audioStream.getAudioTracks();
+      console.log('Adding audio tracks:', audioTracks.length);
+      audioTracks.forEach(track => canvasStream.addTrack(track));
+    }
+    
+    console.log('Setting stream and starting recording...');
+    setStream(canvasStream);
+    startRecording(canvasStream, true); // Skip setIsRecording since we already set it
+  };
+  
+  const startRecording = (mediaStream: MediaStream, skipSetRecording = false) => {
     chunksRef.current = [];
     
     const options = {
@@ -165,7 +384,11 @@ export const RecordingPanel: React.FC = () => {
     };
     
     mediaRecorderRef.current.start();
-    setIsRecording(true);
+    
+    // Only set isRecording if not already set (for screen-camera mode it's set earlier)
+    if (!skipSetRecording) {
+      setIsRecording(true);
+    }
   };
   
   const stopRecording = () => {
@@ -174,13 +397,31 @@ export const RecordingPanel: React.FC = () => {
     recordingTimeRef.current = finalRecordingTime;
     console.log('Stopping recording, duration:', finalRecordingTime, 'seconds');
     
+    // Stop canvas animation
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    // Stop media recorder
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
     
+    // Stop combined stream
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
+    }
+    
+    // Stop individual streams for screen+camera mode
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(track => track.stop());
+      screenStreamRef.current = null;
+    }
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach(track => track.stop());
+      cameraStreamRef.current = null;
     }
     
     setIsRecording(false);
@@ -312,8 +553,10 @@ export const RecordingPanel: React.FC = () => {
   const handleStart = () => {
     if (recordingType === 'screen') {
       startScreenRecording();
-    } else {
+    } else if (recordingType === 'webcam') {
       startWebcamRecording();
+    } else if (recordingType === 'screen-camera') {
+      startScreenCameraRecording();
     }
   };
   
@@ -352,13 +595,21 @@ export const RecordingPanel: React.FC = () => {
               >
                 Webcam
               </button>
+              <button
+                className={`${styles.tab} ${recordingType === 'screen-camera' ? styles.active : ''}`}
+                onClick={() => setRecordingType('screen-camera')}
+                disabled={isRecording}
+                title="Record screen + camera (Picture-in-Picture)"
+              >
+                Screen + Camera
+              </button>
             </div>
             
             {error && (
               <div className={styles.error}>{error}</div>
             )}
             
-            {recordingType === 'screen' && !isRecording && (
+            {(recordingType === 'screen' || recordingType === 'screen-camera') && !isRecording && (
               <div className={styles.sources}>
                 <h3>Select Source</h3>
                 <div className={styles.sourceGrid}>
@@ -384,7 +635,11 @@ export const RecordingPanel: React.FC = () => {
             
             {isRecording && (
               <div className={styles.recording}>
-                <video ref={videoPreviewRef} autoPlay muted className={styles.videoPreview} />
+                {recordingType === 'screen-camera' ? (
+                  <canvas ref={canvasRef} className={styles.videoPreview} />
+                ) : (
+                  <video ref={videoPreviewRef} autoPlay muted className={styles.videoPreview} />
+                )}
                 <div className={styles.recordingIndicator}>
                   <span className={styles.recordingDot}>●</span>
                   Recording: {formatTime(recordingTime, showCentiseconds)}
@@ -397,8 +652,12 @@ export const RecordingPanel: React.FC = () => {
                 <button
                   className={styles.startButton}
                   onClick={handleStart}
-                  disabled={recordingType === 'screen' && !selectedSource}
-                  title={recordingType === 'screen' ? 'Start screen recording' : 'Start webcam recording'}
+                  disabled={(recordingType === 'screen' || recordingType === 'screen-camera') && !selectedSource}
+                  title={
+                    recordingType === 'screen' ? 'Start screen recording' :
+                    recordingType === 'webcam' ? 'Start webcam recording' :
+                    'Start screen + camera recording'
+                  }
                 >
                   Start Recording
                 </button>

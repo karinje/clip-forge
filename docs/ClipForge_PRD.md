@@ -44,7 +44,11 @@ This PRD defines the scope for both milestones, provides detailed user stories, 
 
 1. Screen recording with full screen or window selection
 2. Webcam recording with system camera access
-3. Simultaneous screen + webcam recording (picture-in-picture)
+3. ✅ Simultaneous screen + webcam recording (picture-in-picture)
+   - Live PiP preview during recording
+   - Camera appears as overlay (25% scale, bottom-right corner)
+   - Real-time canvas composition
+   - Combined audio from microphone
 4. Audio capture from microphone
 5. Save recordings directly to timeline
 
@@ -97,7 +101,10 @@ This PRD defines the scope for both milestones, provides detailed user stories, 
 
 ### Stretch Goals (If Time Permits)
 
-1. ⏳ Camera + Screen recording (PiP) with live preview - Partially implemented (screen and webcam separate)
+1. ✅ Camera + Screen recording (PiP) with live preview - **COMPLETED** (October 30, 2025)
+   - Simultaneous screen and webcam capture with real-time PiP preview
+   - Canvas-based composition with 25% camera overlay
+   - Combined audio recording from microphone
 2. ⏳ Video speed adjustment (slow motion, fast forward) - Pending
 3. ⏳ Text overlays with custom fonts - Pending
 4. ⏳ Transitions between clips (fade, slide) - Pending
