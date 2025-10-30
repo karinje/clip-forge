@@ -11,5 +11,8 @@ export interface MediaClip {
   bitrate?: number;
   thumbnail?: string;
   createdAt: Date;
+  type?: 'video' | 'audio'; // Type of media file
+  hasVideo?: boolean; // Whether file has video stream
+  hasAudio?: boolean; // Whether file has audio stream
 }
 

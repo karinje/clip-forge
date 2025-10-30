@@ -77,23 +77,35 @@ This PRD defines the scope for both milestones, provides detailed user stories, 
 4. Audio playback synchronized with video
 5. Preview window shows current frame at playhead
 
+### Audio Overlay & Mixing
+
+1. Import MP3 and other audio files (mp3, wav, aac, m4a, flac, ogg)
+2. Audio-only extraction from video clips (use audio without video)
+3. Volume control per track (0-200% with visual slider)
+4. Mix multiple audio tracks (main video + overlay audio)
+5. Background music support with adjustable volume
+6. Automatic audio stream detection and mixing in export
+
 ### Export & Sharing
 
 1. Export timeline to MP4
 2. Resolution options (720p, 1080p, source resolution)
 3. Progress indicator during export
 4. Save to local file system
+5. Audio mixing with volume adjustments
+6. Scrollable export modal with always-visible controls
 
 ### Stretch Goals (If Time Permits)
 
-1. Text overlays with custom fonts
-2. Transitions between clips (fade, slide)
-3. Audio controls (volume, fade in/out)
-4. Filters and effects (brightness, contrast, saturation)
-5. Export presets (YouTube, Instagram, TikTok)
-6. Keyboard shortcuts
-7. Auto-save project state
-8. Undo/redo functionality
+1. Camera + Screen recording (PiP) with live preview
+2. Video speed adjustment (slow motion, fast forward)
+3. Text overlays with custom fonts
+4. Transitions between clips (fade, slide)
+5. Audio fade in/out effects
+6. Filters and effects (brightness, contrast, saturation)
+7. Export presets (YouTube, Instagram, TikTok)
+8. Auto-save project state
+9. Undo/redo functionality
 
 ---
 
@@ -185,6 +197,19 @@ This PRD defines the scope for both milestones, provides detailed user stories, 
 - Timeline supports at least 2 video tracks
 - Upper track displays as picture-in-picture over lower track
 - Preview accurately shows layered composition
+
+#### US-FULL-06: Audio Overlay & Mixing
+
+**As a** content creator, **I want to** add background music to my videos with adjustable volume, **so that** I can enhance the viewing experience without overpowering my narration.
+
+**Acceptance Criteria:**
+- User can import MP3 and other audio files
+- Audio files appear in media library with duration/metadata
+- User can add audio to overlay tracks
+- User can toggle "audio only" mode to use audio without video from video files
+- Volume slider adjusts audio level per track (0-200%)
+- Export correctly mixes main video audio with overlay audio tracks
+- Volume adjustments are applied in final export
 
 ---
 
@@ -1029,6 +1054,17 @@ User drags Clip B end trim from 3s to 5s WHILE playing at 16s timeline (6s video
 - **Tooltips on All Buttons**: Native browser tooltips via `title` attributes for all interactive elements
 - **Shortcuts Button**: Keyboard icon button in timeline toolbar to quickly access shortcuts help modal
 - **Cleaner Clip UI**: Removed X delete button from clips; use Delete key or toolbar button for keyboard-first workflow
+- **Audio Controls**: Professional track-level controls for volume and audio-only mode with consistent styling
+- **Selection Color**: Gray selection overlay (more natural for deletion marking than yellow)
+
+**Audio Features (October 30, 2025)**:
+- **MP3/Audio Import**: Full support for importing audio files (mp3, wav, aac, m4a, flac, ogg)
+- **Audio-Only Mode**: Toggle button to extract only audio from video clips on overlay tracks
+- **Volume Control**: Per-track volume slider (0-200%) with percentage display
+- **Audio Mixing**: FFmpeg-powered audio mixing with automatic stream detection
+- **Mixed Scenarios**: Supports main video with/without audio + overlay audio in any combination
+- **Export Modal**: Scrollable dialog (max-height 85vh) with fixed header/footer, always-visible export button
+- **Professional UI**: Consistent transparent backgrounds, visual separators, hover effects
 
 ---
 

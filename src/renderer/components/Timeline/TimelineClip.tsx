@@ -23,6 +23,8 @@ export const TimelineClip: React.FC<Props> = ({
   const mediaClip = clips.find(c => c.id === clip.mediaClipId);
   const getSnapPosition = useTimelineStore(state => state.getSnapPosition);
   const showCentiseconds = useTimelineStore(state => state.showCentiseconds);
+  const updateClipAudioOnly = useTimelineStore(state => state.updateClipAudioOnly);
+  const updateClipVolume = useTimelineStore(state => state.updateClipVolume);
   
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [isDraggingRight, setIsDraggingRight] = useState(false);

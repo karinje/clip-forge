@@ -10,20 +10,28 @@ export function useMediaImport() {
   const processFilePaths = async (filePaths: string[]) => {
     for (const filePath of filePaths) {
       try {
-        const [metadataResult, thumbnailResult] = await Promise.all([
-          window.electronAPI.getVideoMetadata(filePath),
-          window.electronAPI.getVideoThumbnail(filePath, 0)
-        ]);
-
+        const fileName = filePath.split('/').pop() || 'Unknown';
+        const fileExt = fileName.split('.').pop()?.toLowerCase();
+        const isAudio = ['mp3', 'wav', 'aac', 'm4a', 'flac', 'ogg'].includes(fileExt || '');
+        
+        // Get metadata
+        const metadataResult = await window.electronAPI.getVideoMetadata(filePath);
+        
         if (metadataResult.success) {
+          // Only try to get thumbnail for video files
+          let thumbnailResult: { success: boolean; data?: string } = { success: false };
+          if (!isAudio && metadataResult.data.width > 0) {
+            thumbnailResult = await window.electronAPI.getVideoThumbnail(filePath, 0);
+          }
+          
           const clip: MediaClip = {
             id: `clip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            name: filePath.split('/').pop() || 'Unknown',
+            name: fileName,
             filePath,
             duration: metadataResult.data.duration,
             resolution: {
-              width: metadataResult.data.width,
-              height: metadataResult.data.height,
+              width: metadataResult.data.width || 0,
+              height: metadataResult.data.height || 0,
             },
             format: metadataResult.data.format,
             codec: metadataResult.data.codec,
@@ -32,6 +40,9 @@ export function useMediaImport() {
             bitrate: metadataResult.data.bitrate,
             thumbnail: thumbnailResult.success ? thumbnailResult.data : undefined,
             createdAt: new Date(),
+            type: isAudio ? 'audio' : 'video',
+            hasVideo: metadataResult.data.width > 0,
+            hasAudio: true, // Assume audio exists if file imported
           };
 
           addClip(clip);

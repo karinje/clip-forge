@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // File operations
   openFile: () => ipcRenderer.invoke(IPC_CHANNELS.FILE_OPEN),
   saveFile: (defaultPath?: string) => ipcRenderer.invoke(IPC_CHANNELS.FILE_SAVE, defaultPath),
+  deleteFile: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.FILE_DELETE, filePath),
+  copyFile: (sourcePath: string, destPath: string) => ipcRenderer.invoke(IPC_CHANNELS.FILE_COPY, sourcePath, destPath),
   
   // Video operations
   getVideoMetadata: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.VIDEO_METADATA, filePath),
@@ -44,6 +46,8 @@ export interface ElectronAPI {
   getFilePathFromFile: (file: File) => string | null;
   openFile: () => Promise<{ success: boolean; data: string[] }>;
   saveFile: (defaultPath?: string) => Promise<string | null>;
+  deleteFile: (filePath: string) => Promise<{ success: boolean; error?: string }>;
+  copyFile: (sourcePath: string, destPath: string) => Promise<{ success: boolean; error?: string }>;
   getVideoMetadata: (filePath: string) => Promise<any>;
   getVideoThumbnail: (filePath: string, timestamp?: number) => Promise<{ success: boolean; data?: string; error?: string }>;
   exportVideo: (options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;

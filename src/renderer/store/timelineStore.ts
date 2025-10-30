@@ -10,6 +10,8 @@ export interface TimelineClip {
   originalDuration: number; // Original full duration (for timeline ruler)
   trimStart: number; // Trim from original video start
   trimEnd: number; // Trim from original video end (from the end, not absolute)
+  audioOnly?: boolean; // Use only audio from this clip (no video)
+  volume?: number; // Volume level 0-200 (100 = normal, default)
 }
 
 export interface TimelineTrack {
@@ -19,6 +21,7 @@ export interface TimelineTrack {
   height: number; // Track height in pixels
   muted: boolean;
   order: number; // Visual stacking order (0 = bottom/main)
+  volume?: number; // Track-level volume 0-200 (100 = normal, default)
 }
 
 interface TimelineState {
@@ -39,6 +42,9 @@ interface TimelineState {
   addClipToTimeline: (mediaClipId: string, clipDuration: number, trackId?: string) => void;
   removeClipFromTimeline: (clipId: string) => void;
   updateClipTrim: (clipId: string, trimStart: number, trimEnd: number) => void;
+  updateClipAudioOnly: (clipId: string, audioOnly: boolean) => void;
+  updateClipVolume: (clipId: string, volume: number) => void;
+  updateTrackVolume: (trackId: string, volume: number) => void;
   reorderClip: (clipId: string, newIndex: number, newTrackId?: string) => void;
   splitClipAtPlayhead: (clipId: string) => void;
   duplicateClip: (clipId: string) => void;
@@ -194,6 +200,24 @@ export const useTimelineStore = create<TimelineState>()(
         return { clips };
       }),
       
+      updateClipAudioOnly: (clipId, audioOnly) => set((state) => ({
+        clips: state.clips.map(clip =>
+          clip.id === clipId ? { ...clip, audioOnly } : clip
+        ),
+      })),
+      
+      updateClipVolume: (clipId, volume) => set((state) => ({
+        clips: state.clips.map(clip =>
+          clip.id === clipId ? { ...clip, volume } : clip
+        ),
+      })),
+      
+      updateTrackVolume: (trackId, volume) => set((state) => ({
+        tracks: state.tracks.map(track =>
+          track.id === trackId ? { ...track, volume } : track
+        ),
+      })),
+      
       reorderClip: (clipId, newIndex, newTrackId) => set((state) => {
         const clip = state.clips.find(c => c.id === clipId);
         if (!clip) return state;
@@ -228,23 +252,35 @@ export const useTimelineStore = create<TimelineState>()(
         if (!clip) return state;
         
         const { playheadPosition } = state;
-        const clipStart = clip.startTime;
-        const clipEnd = clip.startTime + clip.originalDuration;
         
-        // Check if playhead is within this clip (in timeline space)
-        if (playheadPosition <= clipStart || playheadPosition >= clipEnd) {
-          console.warn('⚠️ Playhead not within clip bounds');
+        // Calculate the PLAYABLE region of the clip (accounting for existing trims)
+        const playableStart = clip.startTime + clip.trimStart;
+        const playableEnd = clip.startTime + clip.originalDuration - clip.trimEnd;
+        
+        // Check if playhead is within the PLAYABLE region
+        if (playheadPosition <= playableStart || playheadPosition >= playableEnd) {
+          console.warn('⚠️ Playhead not within clip playable bounds', {
+            playheadPosition,
+            playableStart,
+            playableEnd,
+            trimStart: clip.trimStart,
+            trimEnd: clip.trimEnd
+          });
           return state;
         }
         
-        // Split point offset from clip start (in video time)
-        const splitOffset = playheadPosition - clipStart;
+        // Split point offset from clip start (in video time, from 0 to originalDuration)
+        const splitOffset = playheadPosition - clip.startTime;
         
         console.log('🔪 Splitting clip (Loom model):', {
           clipId,
-          clipStart,
+          clipStart: clip.startTime,
+          playableStart,
+          playableEnd,
+          playheadPosition,
           splitOffset,
           originalDuration: clip.originalDuration,
+          existingTrims: { trimStart: clip.trimStart, trimEnd: clip.trimEnd }
         });
         
         // ✅ LOOM MODEL: Both clips at SAME position, SAME originalDuration
@@ -276,6 +312,17 @@ export const useTimelineStore = create<TimelineState>()(
           clip1: { trimStart: clip1.trimStart, trimEnd: clip1.trimEnd, duration: clip1.duration },
           clip2: { trimStart: clip2.trimStart, trimEnd: clip2.trimEnd, duration: clip2.duration },
         });
+        
+        // Validate that both clips have positive durations
+        if (clip1.duration <= 0 || clip2.duration <= 0) {
+          console.error('❌ Split would create invalid clip durations:', {
+            clip1Duration: clip1.duration,
+            clip2Duration: clip2.duration,
+            splitOffset,
+            existingTrims: { trimStart: clip.trimStart, trimEnd: clip.trimEnd }
+          });
+          return state; // Abort split
+        }
         
         // Replace original clip with two new clips
         const newClips = state.clips.map(c => 
@@ -563,7 +610,7 @@ export const useTimelineStore = create<TimelineState>()(
       clearSelection: () => set({ selectionInPoint: null, selectionOutPoint: null }),
       
       deleteSelectedRegion: () => set((state) => {
-        const { selectionInPoint, selectionOutPoint } = state;
+        const { selectionInPoint, selectionOutPoint, selectedTimelineClipId } = state;
         
         // Need both points to delete
         if (selectionInPoint === null || selectionOutPoint === null) {
@@ -571,16 +618,26 @@ export const useTimelineStore = create<TimelineState>()(
           return state;
         }
         
+        // Find which track we're deleting from (from the selected clip)
+        const selectedClip = state.clips.find(c => c.id === selectedTimelineClipId);
+        const targetTrackId = selectedClip?.trackId || state.tracks[0]?.id; // Default to main track if no selection
+        
         const start = Math.min(selectionInPoint, selectionOutPoint);
         const end = Math.max(selectionInPoint, selectionOutPoint);
         
-        console.log(`🗑️ Deleting selected region: ${start.toFixed(2)}s - ${end.toFixed(2)}s`);
+        console.log(`🗑️ Deleting selected region: ${start.toFixed(2)}s - ${end.toFixed(2)}s on track ${targetTrackId}`);
         
-        // Find all clips that overlap with the selected region
+        // Find clips that overlap with the selected region ON THE SELECTED TRACK ONLY
+        // Must check PLAYABLE bounds (accounting for trims), not full clip bounds
         const affectedClips = state.clips.filter(clip => {
-          const clipStart = clip.startTime;
-          const clipEnd = clip.startTime + clip.originalDuration;
-          return clipStart < end && clipEnd > start;
+          if (clip.trackId !== targetTrackId) return false; // Skip clips on other tracks
+          
+          // Use PLAYABLE region (accounting for existing trims)
+          const playableStart = clip.startTime + clip.trimStart;
+          const playableEnd = clip.startTime + clip.originalDuration - clip.trimEnd;
+          
+          // Check if selection overlaps with PLAYABLE region
+          return playableStart < end && playableEnd > start;
         });
         
         if (affectedClips.length === 0) {
@@ -593,62 +650,101 @@ export const useTimelineStore = create<TimelineState>()(
         const otherClips = state.clips.filter(c => !affectedClips.includes(c));
         
         affectedClips.forEach(clip => {
-          const clipStart = clip.startTime;
-          const clipEnd = clip.startTime + clip.originalDuration;
+          // Work with PLAYABLE region (accounting for existing trims)
+          const playableStart = clip.startTime + clip.trimStart;
+          const playableEnd = clip.startTime + clip.originalDuration - clip.trimEnd;
           
-          // Case 1: Selection completely covers clip - delete entire clip
-          if (start <= clipStart && end >= clipEnd) {
+          console.log('Processing clip:', {
+            clipId: clip.id,
+            playableStart,
+            playableEnd,
+            selectionStart: start,
+            selectionEnd: end,
+            existingTrims: { trimStart: clip.trimStart, trimEnd: clip.trimEnd }
+          });
+          
+          // Case 1: Selection completely covers the PLAYABLE region - delete entire clip
+          if (start <= playableStart && end >= playableEnd) {
+            console.log('→ Case 1: Clip completely deleted');
             // Clip is completely deleted, don't add to newClips
             return;
           }
           
-          // Case 2: Selection is in the middle of clip - split into two parts
-          // LOOM MODEL: Both parts maintain original startTime and full originalDuration,
-          // but use trim to show only their respective portions
-          if (start > clipStart && end < clipEnd) {
-            const offsetFromStart = start - clipStart;
-            const deletedDuration = end - start;
+          // Case 2: Selection is in the middle of PLAYABLE region - split into two parts
+          if (start > playableStart && end < playableEnd) {
+            console.log('→ Case 2: Split in middle');
             
-            const newTrimEndBefore = clip.trimEnd + (clipEnd - start);
-            const newTrimStartAfter = clip.trimStart + offsetFromStart + deletedDuration;
+            // Calculate trim values in VIDEO time (0 to originalDuration)
+            const splitStartInVideo = start - clip.startTime; // Where selection starts in video
+            const splitEndInVideo = end - clip.startTime;     // Where selection ends in video
             
-            // Keep the part before selection
-            newClips.push({
-              ...clip,
-              id: `timeline-clip-${Date.now()}-${Math.random()}-before`,
-              trimEnd: newTrimEndBefore,
-              duration: clip.originalDuration - clip.trimStart - newTrimEndBefore,
+            const newTrimEndBefore = clip.originalDuration - splitStartInVideo;
+            const newTrimStartAfter = splitEndInVideo;
+            
+            const durationBefore = clip.originalDuration - clip.trimStart - newTrimEndBefore;
+            const durationAfter = clip.originalDuration - newTrimStartAfter - clip.trimEnd;
+            
+            console.log('Split calculations:', {
+              splitStartInVideo,
+              splitEndInVideo,
+              newTrimEndBefore,
+              newTrimStartAfter,
+              durationBefore,
+              durationAfter
             });
             
-            // Keep the part after selection
-            newClips.push({
-              ...clip,
-              id: `timeline-clip-${Date.now()}-${Math.random()}-after`,
-              trimStart: newTrimStartAfter,
-              duration: clip.originalDuration - newTrimStartAfter - clip.trimEnd,
-            });
+            // Validate durations
+            if (durationBefore > 0) {
+              newClips.push({
+                ...clip,
+                id: `timeline-clip-${Date.now()}-${Math.random()}-before`,
+                trimEnd: newTrimEndBefore,
+                duration: durationBefore,
+              });
+            }
+            
+            if (durationAfter > 0) {
+              newClips.push({
+                ...clip,
+                id: `timeline-clip-${Date.now()}-${Math.random()}-after`,
+                trimStart: newTrimStartAfter,
+                duration: durationAfter,
+              });
+            }
           }
           
-          // Case 3: Selection cuts off the start of clip
-          else if (start <= clipStart && end > clipStart && end < clipEnd) {
-            const cutAmount = end - clipStart;
-            const newTrimStart = clip.trimStart + cutAmount;
-            newClips.push({
-              ...clip,
-              trimStart: newTrimStart,
-              duration: clip.originalDuration - newTrimStart - clip.trimEnd,
-            });
+          // Case 3: Selection cuts off the start of PLAYABLE region
+          else if (start <= playableStart && end > playableStart && end < playableEnd) {
+            console.log('→ Case 3: Cut from start');
+            
+            const cutEndInVideo = end - clip.startTime;
+            const newTrimStart = cutEndInVideo;
+            const newDuration = clip.originalDuration - newTrimStart - clip.trimEnd;
+            
+            if (newDuration > 0) {
+              newClips.push({
+                ...clip,
+                trimStart: newTrimStart,
+                duration: newDuration,
+              });
+            }
           }
           
-          // Case 4: Selection cuts off the end of clip
-          else if (start > clipStart && start < clipEnd && end >= clipEnd) {
-            const cutAmount = clipEnd - start;
-            const newTrimEnd = clip.trimEnd + cutAmount;
-            newClips.push({
-              ...clip,
-              trimEnd: newTrimEnd,
-              duration: clip.originalDuration - clip.trimStart - newTrimEnd,
-            });
+          // Case 4: Selection cuts off the end of PLAYABLE region
+          else if (start > playableStart && start < playableEnd && end >= playableEnd) {
+            console.log('→ Case 4: Cut from end');
+            
+            const cutStartInVideo = start - clip.startTime;
+            const newTrimEnd = clip.originalDuration - cutStartInVideo;
+            const newDuration = clip.originalDuration - clip.trimStart - newTrimEnd;
+            
+            if (newDuration > 0) {
+              newClips.push({
+                ...clip,
+                trimEnd: newTrimEnd,
+                duration: newDuration,
+              });
+            }
           }
         });
         

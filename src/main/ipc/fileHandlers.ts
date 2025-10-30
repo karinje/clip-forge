@@ -1,4 +1,5 @@
 import { dialog, ipcMain } from 'electron';
+import * as fs from 'fs';
 import { IPC_CHANNELS } from '../../shared/constants/channels';
 import { Logger } from '../utils/logger';
 
@@ -11,7 +12,9 @@ export function registerFileHandlers() {
     const result = await dialog.showOpenDialog({
       properties: ['openFile', 'multiSelections'],
       filters: [
+        { name: 'Media Files', extensions: ['mp4', 'mov', 'webm', 'avi', 'mkv', 'mp3', 'wav', 'aac', 'm4a'] },
         { name: 'Videos', extensions: ['mp4', 'mov', 'webm', 'avi', 'mkv'] },
+        { name: 'Audio', extensions: ['mp3', 'wav', 'aac', 'm4a'] },
         { name: 'All Files', extensions: ['*'] },
       ],
     });
@@ -45,6 +48,37 @@ export function registerFileHandlers() {
 
     logger.info('Save path selected:', result.filePath);
     return result.filePath;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FILE_DELETE, async (_event, filePath: string) => {
+    logger.info('Deleting file:', filePath);
+    
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        logger.info('File deleted successfully:', filePath);
+        return { success: true };
+      } else {
+        logger.warn('File does not exist:', filePath);
+        return { success: true }; // Not an error if file doesn't exist
+      }
+    } catch (error) {
+      logger.error('Failed to delete file:', error);
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FILE_COPY, async (_event, sourcePath: string, destPath: string) => {
+    logger.info('Copying file:', { sourcePath, destPath });
+    
+    try {
+      fs.copyFileSync(sourcePath, destPath);
+      logger.info('File copied successfully');
+      return { success: true };
+    } catch (error) {
+      logger.error('Failed to copy file:', error);
+      return { success: false, error: (error as Error).message };
+    }
   });
 }
 

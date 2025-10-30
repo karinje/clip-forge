@@ -7,11 +7,12 @@ import styles from './Timeline.module.css';
 
 interface Props {
   onExportClick: () => void;
+  onPreviewClick: () => void;
   onShowShortcuts?: () => void;
   playPauseHandler?: React.MutableRefObject<(() => void) | null>;
 }
 
-export const Timeline: React.FC<Props> = ({ onExportClick, onShowShortcuts, playPauseHandler }) => {
+export const Timeline: React.FC<Props> = ({ onExportClick, onPreviewClick, onShowShortcuts, playPauseHandler }) => {
   const { 
     clips, 
     tracks, 
@@ -30,6 +31,8 @@ export const Timeline: React.FC<Props> = ({ onExportClick, onShowShortcuts, play
     removeTrack,
     toggleTrackMute,
     toggleTrackSolo,
+    updateTrackVolume,
+    updateClipAudioOnly,
     soloTrackId,
     snapEnabled,
     toggleSnap,
@@ -45,6 +48,7 @@ export const Timeline: React.FC<Props> = ({ onExportClick, onShowShortcuts, play
   } = useTimelineStore();
   const selectedClipId = useProjectStore(state => state.selectedClipId);
   const selectClip = useProjectStore(state => state.selectClip);
+  const mediaClips = useProjectStore(state => state.clips);
   
   const [isDragOver, setIsDragOver] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -463,6 +467,14 @@ export const Timeline: React.FC<Props> = ({ onExportClick, onShowShortcuts, play
             </svg>
           </button>
           <button
+            className={styles.previewButton}
+            onClick={onPreviewClick}
+            disabled={clips.length === 0}
+            title="Generate preview of the final composition"
+          >
+            🎬 Preview
+          </button>
+          <button
             className={styles.exportButton}
             onClick={onExportClick}
             disabled={clips.length === 0}
@@ -522,6 +534,48 @@ export const Timeline: React.FC<Props> = ({ onExportClick, onShowShortcuts, play
                   <div className={styles.trackHeader}>
                     <span className={styles.trackName}>{track.name}</span>
                     <div className={styles.trackControls}>
+                      {track.type === 'overlay' && trackClips.length > 0 && (() => {
+                        const hasVideoClips = trackClips.some(clip => {
+                          const mediaClip = mediaClips.find(mc => mc.id === clip.mediaClipId);
+                          return mediaClip?.hasVideo;
+                        });
+                        const allClipsAudioOnly = trackClips.every(clip => clip.audioOnly);
+                        
+                        return (
+                          <>
+                            {hasVideoClips && (
+                              <button
+                                className={`${styles.audioOnlyButton} ${allClipsAudioOnly ? styles.active : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Toggle audio-only for all clips in this track
+                                  trackClips.forEach(clip => {
+                                    updateClipAudioOnly(clip.id, !allClipsAudioOnly);
+                                  });
+                                }}
+                                title={allClipsAudioOnly ? "Show video" : "Audio only (hide video)"}
+                              >
+                                🎵
+                              </button>
+                            )}
+                            <span className={styles.volumeLabel}>Vol</span>
+                            <input
+                              type="range"
+                              min="0"
+                              max="200"
+                              value={track.volume ?? 100}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                updateTrackVolume(track.id, parseInt(e.target.value));
+                              }}
+                              className={styles.trackVolumeSlider}
+                              title={`Track volume: ${track.volume ?? 100}%`}
+                            />
+                            <span className={styles.volumePercent}>{track.volume ?? 100}%</span>
+                            <div className={styles.controlsSeparator} />
+                          </>
+                        );
+                      })()}
                       <button
                         className={`${styles.soloButton} ${soloTrackId === track.id ? styles.solo : ''}`}
                         onClick={(e) => {

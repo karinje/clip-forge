@@ -29,10 +29,32 @@ export class MetadataService {
         const videoStream = metadata.streams.find(
           (s) => s.codec_type === 'video'
         );
+        
+        const audioStream = metadata.streams.find(
+          (s) => s.codec_type === 'audio'
+        );
+
+        // Handle audio-only files (like MP3)
+        if (!videoStream && audioStream) {
+          logger.info('Audio-only file detected (no video stream)');
+          const result: VideoMetadata = {
+            duration: metadata.format.duration || 0,
+            width: 0,
+            height: 0,
+            format: metadata.format.format_name || '',
+            codec: audioStream.codec_name || '',
+            fileSize: metadata.format.size || 0,
+            bitrate: metadata.format.bit_rate,
+            fps: undefined,
+          };
+          logger.info('Audio metadata extracted successfully:', result);
+          resolve(result);
+          return;
+        }
 
         if (!videoStream) {
-          const error = new Error('No video stream found');
-          logger.error('No video stream found in file');
+          const error = new Error('No video or audio stream found');
+          logger.error('No valid streams found in file');
           reject(error);
           return;
         }

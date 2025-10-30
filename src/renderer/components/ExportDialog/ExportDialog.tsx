@@ -14,6 +14,7 @@ export interface ExportSettings {
   format: 'mp4' | 'webm' | 'mov';
   quality: 'high' | 'medium' | 'low';
   outputPath: string;
+  durationMode?: 'main' | 'shortest' | 'longest'; // How to handle duration mismatch
   pipConfig?: {
     position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
     scale: number;
@@ -34,6 +35,7 @@ export const ExportDialog: React.FC<Props> = ({
   const [quality, setQuality] = useState<'high' | 'medium' | 'low'>('high');
   const [outputPath, setOutputPath] = useState('');
   const [exportSuccess, setExportSuccess] = useState(false);
+  const [durationMode, setDurationMode] = useState<'main' | 'shortest' | 'longest'>('main');
   const [pipPosition, setPipPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('bottom-right');
   const [pipScale, setPipScale] = useState(0.25);
   
@@ -54,6 +56,7 @@ export const ExportDialog: React.FC<Props> = ({
       format,
       quality,
       outputPath,
+      durationMode: hasMultipleTracks ? durationMode : undefined,
       pipConfig: hasMultipleTracks ? {
         position: pipPosition,
         scale: pipScale,
@@ -230,7 +233,28 @@ export const ExportDialog: React.FC<Props> = ({
           
           {hasMultipleTracks && (
             <div className={styles.section}>
-              <div className={styles.sectionTitle}>Picture-in-Picture Settings</div>
+              <div className={styles.sectionTitle}>Multi-Track Settings</div>
+              
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Duration Mode</label>
+                <select 
+                  className={styles.select}
+                  value={durationMode}
+                  onChange={(e) => setDurationMode(e.target.value as any)}
+                  disabled={isExporting}
+                  title="How to handle duration mismatch between tracks"
+                >
+                  <option value="main">Main Track Duration (recommended)</option>
+                  <option value="shortest">Shortest Track (cut to fit)</option>
+                  <option value="longest">Longest Track (freeze/extend)</option>
+                </select>
+                <div className={styles.hint}>
+                  {durationMode === 'main' && 'Export will match main video track length'}
+                  {durationMode === 'shortest' && 'Export will match shortest track, cutting others'}
+                  {durationMode === 'longest' && 'Export will match longest track, freezing/extending others'}
+                </div>
+              </div>
+              
               <div className={styles.inputGroup}>
                 <label className={styles.label}>Overlay Position</label>
                 <select 

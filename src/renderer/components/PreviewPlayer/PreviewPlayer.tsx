@@ -66,6 +66,7 @@ interface PreviewPlayerProps {
 export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({ onPlayPauseHandlerReady }) => {
   const clips = useProjectStore((state) => state.clips);
   const timelineClips = useTimelineStore((state) => state.clips);
+  const tracks = useTimelineStore((state) => state.tracks);
   const playheadPosition = useTimelineStore((state) => state.playheadPosition);
   const setPlayheadPosition = useTimelineStore((state) => state.setPlayheadPosition);
   const selectTimelineClip = useTimelineStore((state) => state.selectTimelineClip);
@@ -73,7 +74,14 @@ export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({ onPlayPauseHandler
 
   const { videoRef, isPlaying, togglePlayPause: rawTogglePlayPause, changeVolume, volume } = useVideoPlayer();
 
-  const segments = useMemo(() => buildSegments(timelineClips, clips), [timelineClips, clips]);
+  // Only preview main track (Track 0) - overlays are only rendered during export
+  const mainTrackId = tracks[0]?.id;
+  const mainTrackClips = useMemo(
+    () => timelineClips.filter(clip => clip.trackId === mainTrackId),
+    [timelineClips, mainTrackId]
+  );
+  
+  const segments = useMemo(() => buildSegments(mainTrackClips, clips), [mainTrackClips, clips]);
 
   const [activeMedia, setActiveMedia] = useState<MediaClip | null>(null);
   const shouldResumeRef = useRef(false);

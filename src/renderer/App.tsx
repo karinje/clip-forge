@@ -5,17 +5,27 @@ import { Timeline } from './components/Timeline/Timeline';
 import { ExportDialog } from './components/ExportDialog/ExportDialog';
 import { RecordingPanel } from './components/RecordingPanel/RecordingPanel';
 import { ShortcutHelpModal } from './components/ShortcutHelpModal/ShortcutHelpModal';
+import { PreviewCompositionModal } from './components/PreviewCompositionModal/PreviewCompositionModal';
 import { StatusBar } from './components/StatusBar/StatusBar';
 import { useVideoExport } from './hooks/useVideoExport';
+import { useProjectStore } from './store/projectStore';
+import { useTimelineStore } from './store/timelineStore';
 import './styles/index.css';
 
 export const App: React.FC = () => {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewPath, setPreviewPath] = useState('');
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+  const [previewProgress, setPreviewProgress] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [previewHeight, setPreviewHeight] = useState(400);
   const { exportVideo, isExporting, progress, error } = useVideoExport();
+  const clips = useProjectStore(state => state.clips);
+  const timelineClips = useTimelineStore(state => state.clips);
+  const tracks = useTimelineStore(state => state.tracks);
   const playPauseHandlerRef = useRef<(() => void) | null>(null);
   const isDraggingSidebarRef = useRef(false);
   const isDraggingPreviewRef = useRef(false);
@@ -80,6 +90,79 @@ export const App: React.FC = () => {
         setShowExportDialog(false);
       }, 1000);
     }
+  };
+  
+  const handlePreviewClick = async () => {
+    setShowPreviewModal(true);
+    setIsGeneratingPreview(true);
+    setPreviewProgress(0);
+    
+    try {
+      // Generate temp preview file
+      const tempPath = `/tmp/clipforge-preview-${Date.now()}.mp4`;
+      
+      // Build export settings (use default quality and format)
+      const hasMultipleTracks = tracks.length > 1 && tracks.some(t => 
+        timelineClips.filter(c => c.trackId === t.id).length > 0
+      );
+      
+      const settings = {
+        format: 'mp4' as const,
+        quality: 'high' as const,
+        outputPath: tempPath,
+        durationMode: 'main' as const,
+        pipConfig: hasMultipleTracks ? {
+          position: 'bottom-right' as const,
+          scale: 0.25,
+        } : undefined,
+      };
+      
+      // Export to temp file
+      const success = await exportVideo(settings);
+      
+      if (success) {
+        setPreviewPath(tempPath);
+        setIsGeneratingPreview(false);
+      } else {
+        // Close modal on error
+        setShowPreviewModal(false);
+        setIsGeneratingPreview(false);
+      }
+    } catch (err) {
+      console.error('Preview generation failed:', err);
+      setShowPreviewModal(false);
+      setIsGeneratingPreview(false);
+    }
+  };
+  
+  const handleSavePreview = async () => {
+    // Open save dialog
+    const savePath = await window.electronAPI.saveFile('output.mp4');
+    
+    if (savePath && previewPath) {
+      // Copy preview file to save location
+      try {
+        const copyResult = await window.electronAPI.copyFile(previewPath, savePath);
+        
+        if (copyResult.success) {
+          // Delete temp preview
+          await window.electronAPI.deleteFile(previewPath);
+          
+          // Close modal
+          setShowPreviewModal(false);
+          setPreviewPath('');
+        } else {
+          console.error('Failed to copy preview:', copyResult.error);
+        }
+      } catch (err) {
+        console.error('Failed to save preview:', err);
+      }
+    }
+  };
+  
+  const handleClosePreview = () => {
+    setShowPreviewModal(false);
+    setPreviewPath('');
   };
   
   const startSidebarResize = () => {
@@ -148,7 +231,8 @@ export const App: React.FC = () => {
             title="Drag to resize preview"
           />
           <Timeline 
-            onExportClick={handleExportClick} 
+            onExportClick={handleExportClick}
+            onPreviewClick={handlePreviewClick}
             onShowShortcuts={() => setShowShortcutHelp(true)}
             playPauseHandler={playPauseHandlerRef} 
           />
@@ -169,6 +253,17 @@ export const App: React.FC = () => {
       
       {showShortcutHelp && (
         <ShortcutHelpModal onClose={() => setShowShortcutHelp(false)} />
+      )}
+      
+      {showPreviewModal && (
+        <PreviewCompositionModal
+          isOpen={showPreviewModal}
+          onClose={handleClosePreview}
+          previewPath={previewPath}
+          onSaveAs={handleSavePreview}
+          isGenerating={isGeneratingPreview}
+          progress={progress}
+        />
       )}
     </div>
   );

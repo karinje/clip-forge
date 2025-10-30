@@ -49,6 +49,7 @@ export const useVideoExport = () => {
           return {
             type: track.type,
             muted: effectiveMuted,
+            volume: track.volume,
             clips: trackClips.map(clip => {
               const mediaClip = mediaClips.find(mc => mc.id === clip.mediaClipId);
               if (!mediaClip) {
@@ -64,6 +65,8 @@ export const useVideoExport = () => {
                 trimStart: clip.trimStart,
                 trimEnd: clip.trimEnd,
                 duration: clip.duration,
+                audioOnly: clip.audioOnly,
+                volume: clip.volume,
               };
             }),
           };
@@ -74,6 +77,7 @@ export const useVideoExport = () => {
           outputPath: settings.outputPath,
           format: settings.format,
           quality: settings.quality,
+          durationMode: settings.durationMode || 'main',
           pipConfig: settings.pipConfig || { position: 'bottom-right', scale: 0.25 },
         });
         

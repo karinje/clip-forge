@@ -5,6 +5,8 @@ export const IPC_CHANNELS = {
   // File operations
   FILE_OPEN: 'file:open',
   FILE_SAVE: 'file:save',
+  FILE_DELETE: 'file:delete',
+  FILE_COPY: 'file:copy',
   
   // FFmpeg
   FFMPEG_TEST: 'ffmpeg:test',

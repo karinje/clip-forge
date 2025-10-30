@@ -2418,7 +2418,77 @@ clipforge/
 
 ---
 
-### PR-16: Project Save/Load & Testing `[OPTIONAL - NICE TO HAVE]`
+### PR-16: Audio Overlay & Export Modal Polish `[EXTENDED FEATURES]`
+**Time Estimate**: 3-4 hours  
+**Priority**: HIGH - Professional audio editing capabilities  
+**Risk Level**: MEDIUM (FFmpeg audio mixing complexity)
+
+**Status**: ✅ **COMPLETED** (2025-10-30)
+
+**Tasks**:
+- [x] Add MP3/audio file import support:
+  - Added audio file extensions to file dialog filters (mp3, wav, aac, m4a, flac, ogg)
+  - Updated MetadataService to handle audio-only files (no video stream)
+  - Return valid metadata with width/height = 0 for audio files
+  - Display audio files in media library with appropriate icon
+- [x] Add audio-only extraction from video overlays:
+  - Added `audioOnly` toggle button for overlay track clips
+  - UI button in track header to enable/disable video output
+  - When enabled, only audio is used in export (no PiP video)
+- [x] Add volume control for overlay tracks:
+  - Volume slider (0-200%) in track header
+  - Visual percentage display next to slider
+  - Per-clip volume override support (TimelineClip.volume)
+  - Track-level volume control (TimelineTrack.volume)
+- [x] Update FFmpeg export for audio:
+  - Probe each track file to verify audio stream exists before mixing
+  - Apply volume filters (`volume=X`) to individual streams
+  - Mix multiple audio tracks with `amix` filter
+  - Handle clips with/without audio gracefully
+  - Support main video without audio + overlay audio only
+  - Support main video with audio + overlay audio (mixed)
+- [x] Fix export modal visibility:
+  - Made dialog scrollable (max-height 85vh)
+  - Fixed header/footer with flexbox layout
+  - Content area scrolls with custom scrollbar
+  - Export button always visible at bottom
+  - Reduced section margins for compact layout
+- [x] Polish audio control UI:
+  - Moved controls from individual clips to track header
+  - Consistent transparent backgrounds for all controls
+  - Visual grouping with separator divider
+  - Refined styling with hover effects and active states
+  - Proper spacing (8px gap) between controls
+  - Pointer-events management for drag-and-drop compatibility
+- [x] Update data types:
+  - Added `type`, `hasVideo`, `hasAudio` to MediaClip interface
+  - Added `audioOnly`, `volume` to TimelineClip interface
+  - Added `volume` to TimelineTrack interface
+  - Updated all store actions to handle audio properties
+
+**Bug Fixes**:
+- ✅ Fixed MP3 import error (MetadataService now handles audio-only files)
+- ✅ Fixed audio-only overlay export stream not found error (probe before mixing)
+- ✅ Fixed main track drag-and-drop (pointer-events: none on track header)
+- ✅ Fixed selection overlay color (changed from yellow to gray)
+
+**Acceptance Criteria**:
+- ✅ Can import MP3 and other audio files without errors
+- ✅ Audio files display in media library with metadata
+- ✅ Can toggle audio-only mode for video overlay tracks
+- ✅ Volume sliders adjust clip/track audio levels
+- ✅ Export correctly mixes audio from multiple tracks
+- ✅ Export handles main video without audio + overlay audio
+- ✅ Export handles main video with audio + overlay audio
+- ✅ Export modal is fully visible with scrollable content
+- ✅ Audio controls are clean, consistent, and professional
+- ✅ Drag-and-drop still works on main timeline
+
+**Deliverable**: Professional audio overlay and mixing capabilities
+
+---
+
+### PR-17: Project Save/Load & Testing `[OPTIONAL - NICE TO HAVE]`
 **Time Estimate**: 2-3 hours  
 **Priority**: LOW - Prevents data loss but not required  
 **Risk Level**: LOW
@@ -2496,19 +2566,16 @@ clipforge/
 
 ---
 
-### PR-17: Easy Stretch Goals (Audio Controls & Shortcuts) `[STRETCH - EASY]`
+### PR-18: Easy Stretch Goals (Audio Effects & Enhanced Shortcuts) `[STRETCH - EASY]`
 **Time Estimate**: 2-3 hours  
 **Priority**: LOW - Optional polish features  
 **Risk Level**: LOW
 
 **Status**: ⏳ **PENDING**
 
+**Note**: Basic audio controls (volume, mute) implemented in PR-16. This PR covers advanced audio effects.
+
 **Tasks**:
-- [ ] Audio controls per clip:
-  - Volume slider (0-200%) on selected clip
-  - Mute/unmute toggle
-  - Apply volume changes in export via FFmpeg `-af volume=X`
-  - Visual waveform display (optional, harder)
 - [ ] Audio fade in/out:
   - Fade duration sliders (0-2 seconds)
   - Apply to clip start/end
@@ -2536,7 +2603,7 @@ clipforge/
 
 ---
 
-### PR-18: Advanced Stretch Goals (Text, Transitions, Effects) `[STRETCH - ADVANCED]`
+### PR-19: Advanced Stretch Goals (Text, Transitions, Effects) `[STRETCH - ADVANCED]`
 **Time Estimate**: 4-6 hours  
 **Priority**: VERY LOW - Advanced features only if time permits  
 **Risk Level**: HIGH (Complex FFmpeg)
@@ -2616,7 +2683,13 @@ All Core Features Implemented:
 - ✅ Space bar for play/pause - COMPLETED
 - ✅ Collapsible sidebar and resizable panels - COMPLETED
 - ✅ Timeline UI polish (playhead visibility, centered clips, tooltips) - COMPLETED
-- ⏳ PR-16: Project Save/Load (JSON file format)
+- ✅ Audio overlay with volume control - COMPLETED (PR-16)
+- ✅ MP3/audio file import - COMPLETED (PR-16)
+- ✅ Audio-only extraction from video - COMPLETED (PR-16)
+- ✅ Export modal scrollable fix - COMPLETED (PR-16)
+- ⏳ PR-17: Project Save/Load (JSON file format)
+- ⏳ Camera + Screen PiP recording
+- ⏳ Video speed adjustment
 - ⏳ Drag-to-reorder clips on timeline
 - ⏳ Solo track functionality
 - ⏳ Export preview UI showing clip list
