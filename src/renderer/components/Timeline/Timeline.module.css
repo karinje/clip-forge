@@ -25,51 +25,66 @@
   letter-spacing: 0.5px;
 }
 
+/* Toolbar Controls */
 .controls {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
+  flex: 1;
 }
 
-.editingControls {
+/* Control Groups */
+.controlGroup {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
-  padding-right: 12px;
-  border-right: 1px solid var(--color-border);
 }
 
+/* Dividers */
+.divider {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border);
+  margin: 0 4px;
+}
+
+.miniDivider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 2px;
+}
+
+.spacer {
+  flex: 1;
+  min-width: 16px;
+}
+
+/* Button Styles */
 .toolButton {
-  padding: 5px 10px;
+  padding: 5px 9px;
   background: transparent;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .toolButton:hover:not(:disabled) {
-  background: var(--color-bg-elevated);
-  border-color: var(--color-accent);
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
 }
 
 .toolButton:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
-}
-
-.zoomControls {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  padding-right: 12px;
-  border-right: 1px solid var(--color-border);
 }
 
 .zoomButton {
@@ -83,17 +98,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 500;
   transition: all 0.15s ease;
 }
 
 .zoomButton:hover {
-  background: var(--color-bg-elevated);
-  border-color: var(--color-accent);
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-hover);
 }
 
-.snapButton {
+.toggleButton {
   width: 28px;
   height: 28px;
   background: transparent;
@@ -104,46 +119,47 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 13px;
   transition: all 0.15s ease;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
-.snapButton:hover {
-  background: var(--color-bg-elevated);
-  border-color: var(--color-accent);
+.toggleButton:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-hover);
   opacity: 1;
 }
 
-.snapButton.snapActive {
-  background: rgba(52, 199, 89, 0.15);
+.toggleButton.active {
+  background: rgba(52, 199, 89, 0.12);
   border-color: rgba(52, 199, 89, 0.4);
   color: rgba(52, 199, 89, 1);
   opacity: 1;
 }
 
-.resetButton {
-  width: 28px;
-  height: 28px;
+.actionButton {
+  padding: 5px 9px;
   background: transparent;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  color: rgba(255, 69, 58, 0.8);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
+  gap: 5px;
 }
 
-.resetButton:hover {
-  background: rgba(255, 69, 58, 0.15);
-  border-color: var(--color-error);
-  color: var(--color-error);
+.actionButton:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
 }
 
 .previewButton {
-  padding: 5px 12px;
+  padding: 5px 10px;
   background: transparent;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -152,20 +168,23 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.previewButton:hover {
+.previewButton:hover:not(:disabled) {
   background: var(--color-bg-hover);
   border-color: var(--color-border-hover);
 }
 
 .previewButton:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .exportButton {
-  padding: 5px 12px;
+  padding: 5px 10px;
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-sm);
@@ -174,41 +193,41 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.exportButton:hover {
+.exportButton:hover:not(:disabled) {
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(13, 127, 255, 0.3);
 }
 
 .exportButton:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-.shortcutsButton {
-  padding: 5px 10px;
+.iconButton {
+  width: 32px;
+  height: 28px;
   background: transparent;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  color: var(--color-text-primary);
-  font-size: 11px;
-  font-weight: 500;
+  color: var(--color-text-muted);
   cursor: pointer;
-  transition: all 0.15s ease;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  transition: all 0.15s ease;
 }
 
-.shortcutsButton:hover {
-  background: var(--color-bg-elevated);
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
-.shortcutsButton svg {
-  flex-shrink: 0;
+.iconButton:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
 }
 
 .timelineContent {
@@ -489,23 +508,6 @@
   border-color: rgba(255, 69, 58, 0.4);
 }
 
-.addTrackButton {
-  padding: 5px 10px;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.addTrackButton:hover {
-  background: var(--color-bg-tertiary);
-  border-color: var(--color-border-hover);
-  color: var(--color-text-primary);
-}
 
 .selectionOverlay {
   position: absolute;

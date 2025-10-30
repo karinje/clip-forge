@@ -97,15 +97,15 @@ This PRD defines the scope for both milestones, provides detailed user stories, 
 
 ### Stretch Goals (If Time Permits)
 
-1. Camera + Screen recording (PiP) with live preview
-2. Video speed adjustment (slow motion, fast forward)
-3. Text overlays with custom fonts
-4. Transitions between clips (fade, slide)
-5. Audio fade in/out effects
-6. Filters and effects (brightness, contrast, saturation)
-7. Export presets (YouTube, Instagram, TikTok)
-8. Auto-save project state
-9. Undo/redo functionality
+1. ⏳ Camera + Screen recording (PiP) with live preview - Partially implemented (screen and webcam separate)
+2. ⏳ Video speed adjustment (slow motion, fast forward) - Pending
+3. ⏳ Text overlays with custom fonts - Pending
+4. ⏳ Transitions between clips (fade, slide) - Pending
+5. ⏳ Audio fade in/out effects - Pending
+6. ⏳ Filters and effects (brightness, contrast, saturation) - Pending
+7. ⏳ Export presets (YouTube, Instagram, TikTok) - Pending
+8. ⏳ Auto-save project state - Pending
+9. ⏳ Undo/redo functionality - Pending
 
 ---
 
@@ -1056,6 +1056,9 @@ User drags Clip B end trim from 3s to 5s WHILE playing at 16s timeline (6s video
 - **Cleaner Clip UI**: Removed X delete button from clips; use Delete key or toolbar button for keyboard-first workflow
 - **Audio Controls**: Professional track-level controls for volume and audio-only mode with consistent styling
 - **Selection Color**: Gray selection overlay (more natural for deletion marking than yellow)
+- **Header Layout**: Logical workflow sequence - Record → Export Settings → Export Video → Reset
+- **Export Settings Panel**: Dropdown panel with persistent settings (format, quality, duration mode, PiP position/scale)
+- **Preview Composition**: Render full composition to temporary file for preview before final export
 
 **Audio Features (October 30, 2025)**:
 - **MP3/Audio Import**: Full support for importing audio files (mp3, wav, aac, m4a, flac, ogg)

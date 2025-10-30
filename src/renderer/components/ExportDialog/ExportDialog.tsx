@@ -23,6 +23,7 @@ export interface ExportSettings {
 
 import { useTimelineStore } from '../../store/timelineStore';
 import { useProjectStore } from '../../store/projectStore';
+import { useExportSettingsStore } from '../../store/exportSettingsStore';
 
 export const ExportDialog: React.FC<Props> = ({
   onClose,
@@ -31,13 +32,15 @@ export const ExportDialog: React.FC<Props> = ({
   progress,
   error,
 }) => {
-  const [format, setFormat] = useState<'mp4' | 'webm' | 'mov'>('mp4');
-  const [quality, setQuality] = useState<'high' | 'medium' | 'low'>('high');
+  const exportSettings = useExportSettingsStore(state => state.settings);
+  
+  const [format, setFormat] = useState<'mp4' | 'webm' | 'mov'>(exportSettings.format);
+  const [quality, setQuality] = useState<'high' | 'medium' | 'low'>(exportSettings.quality);
   const [outputPath, setOutputPath] = useState('');
   const [exportSuccess, setExportSuccess] = useState(false);
-  const [durationMode, setDurationMode] = useState<'main' | 'shortest' | 'longest'>('main');
-  const [pipPosition, setPipPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('bottom-right');
-  const [pipScale, setPipScale] = useState(0.25);
+  const [durationMode, setDurationMode] = useState<'main' | 'shortest' | 'longest'>(exportSettings.durationMode);
+  const [pipPosition, setPipPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>(exportSettings.pipPosition);
+  const [pipScale, setPipScale] = useState(exportSettings.pipScale);
   
   const { tracks, clips: timelineClips, showCentiseconds } = useTimelineStore();
   const mediaClips = useProjectStore(state => state.clips);

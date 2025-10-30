@@ -6,10 +6,12 @@ import { ExportDialog } from './components/ExportDialog/ExportDialog';
 import { RecordingPanel } from './components/RecordingPanel/RecordingPanel';
 import { ShortcutHelpModal } from './components/ShortcutHelpModal/ShortcutHelpModal';
 import { PreviewCompositionModal } from './components/PreviewCompositionModal/PreviewCompositionModal';
+import { ExportSettings } from './components/ExportSettings/ExportSettings';
 import { StatusBar } from './components/StatusBar/StatusBar';
 import { useVideoExport } from './hooks/useVideoExport';
 import { useProjectStore } from './store/projectStore';
 import { useTimelineStore } from './store/timelineStore';
+import { useExportSettingsStore } from './store/exportSettingsStore';
 import './styles/index.css';
 
 export const App: React.FC = () => {
@@ -26,6 +28,7 @@ export const App: React.FC = () => {
   const clips = useProjectStore(state => state.clips);
   const timelineClips = useTimelineStore(state => state.clips);
   const tracks = useTimelineStore(state => state.tracks);
+  const exportSettings = useExportSettingsStore(state => state.settings);
   const playPauseHandlerRef = useRef<(() => void) | null>(null);
   const isDraggingSidebarRef = useRef(false);
   const isDraggingPreviewRef = useRef(false);
@@ -101,19 +104,19 @@ export const App: React.FC = () => {
       // Generate temp preview file
       const tempPath = `/tmp/clipforge-preview-${Date.now()}.mp4`;
       
-      // Build export settings (use default quality and format)
+      // Build export settings using user preferences from export settings store
       const hasMultipleTracks = tracks.length > 1 && tracks.some(t => 
         timelineClips.filter(c => c.trackId === t.id).length > 0
       );
       
       const settings = {
-        format: 'mp4' as const,
-        quality: 'high' as const,
+        format: exportSettings.format,
+        quality: exportSettings.quality,
         outputPath: tempPath,
-        durationMode: 'main' as const,
+        durationMode: exportSettings.durationMode,
         pipConfig: hasMultipleTracks ? {
-          position: 'bottom-right' as const,
-          scale: 0.25,
+          position: exportSettings.pipPosition,
+          scale: exportSettings.pipScale,
         } : undefined,
       };
       
@@ -183,15 +186,16 @@ export const App: React.FC = () => {
         <div className="app-logo">ClipForge</div>
         <div className="header-spacer"></div>
         <RecordingPanel />
+        <ExportSettings />
+        <button className="header-button primary" onClick={handleExportClick} title="Export timeline to video file">
+          Export Video
+        </button>
         <button 
           className="header-button" 
           onClick={handleReset}
           title="Clear all clips and reset app state"
         >
           Reset
-        </button>
-        <button className="header-button primary" onClick={handleExportClick} title="Export timeline to video file">
-          Export Video
         </button>
       </header>
       

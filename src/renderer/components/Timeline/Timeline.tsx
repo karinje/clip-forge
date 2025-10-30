@@ -371,8 +371,8 @@ export const Timeline: React.FC<Props> = ({ onExportClick, onPreviewClick, onSho
       <div className={styles.header}>
         <div className={styles.title}>Timeline</div>
         <div className={styles.controls}>
-          {/* Loom-style editing controls */}
-          <div className={styles.editingControls}>
+          {/* Edit Actions Group */}
+          <div className={styles.controlGroup}>
             <button
               className={styles.toolButton}
               onClick={handleSplit}
@@ -409,92 +409,121 @@ export const Timeline: React.FC<Props> = ({ onExportClick, onPreviewClick, onSho
             </button>
           </div>
           
-          {/* Zoom controls */}
-          <div className={styles.zoomControls}>
+          <div className={styles.divider} />
+          
+          {/* View Controls Group */}
+          <div className={styles.controlGroup}>
             <button
               className={styles.zoomButton}
               onClick={handleZoomOut}
-              title="Zoom out timeline (decrease zoom level)"
+              title="Zoom out timeline"
             >
               −
             </button>
             <button
               className={styles.zoomButton}
               onClick={handleZoomToFit}
-              title="Zoom to fit all clips in view"
+              title="Zoom to fit"
             >
               ⊡
             </button>
             <button
               className={styles.zoomButton}
               onClick={handleZoomIn}
-              title="Zoom in timeline (increase zoom level)"
+              title="Zoom in timeline"
             >
               +
             </button>
+            <div className={styles.miniDivider} />
             <button
-              className={`${styles.snapButton} ${snapEnabled ? styles.snapActive : ''}`}
+              className={`${styles.toggleButton} ${snapEnabled ? styles.active : ''}`}
               onClick={toggleSnap}
-              title={`Snap to grid/clips: ${snapEnabled ? 'ON' : 'OFF'} (Cmd+Shift+S)`}
+              title={`Snap: ${snapEnabled ? 'ON' : 'OFF'} (Cmd+Shift+S)`}
             >
               🧲
             </button>
             <button
-              className={`${styles.snapButton} ${showCentiseconds ? styles.snapActive : ''}`}
+              className={`${styles.toggleButton} ${showCentiseconds ? styles.active : ''}`}
               onClick={toggleShowCentiseconds}
-              title={`Time display: ${showCentiseconds ? 'MM:SS.CC' : 'MM:SS'}`}
+              title={`Time: ${showCentiseconds ? 'MM:SS.CC' : 'MM:SS'}`}
             >
               .00
             </button>
           </div>
           
-          {tracks.length < 3 && (
+          <div className={styles.divider} />
+          
+          {/* Track Management Group */}
+          <div className={styles.controlGroup}>
+            {tracks.length < 3 && (
+              <button
+                className={styles.actionButton}
+                onClick={handleAddOverlayTrack}
+                title="Add overlay track"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14m-7-7h14"/>
+                </svg>
+                <span>Track</span>
+              </button>
+            )}
             <button
-              className={styles.addTrackButton}
-              onClick={handleAddOverlayTrack}
-              title="Add overlay track for picture-in-picture"
-            >
-              + Track
-            </button>
-          )}
-          <button
-            className={styles.resetButton}
-            onClick={handleReset}
-            title="Clear all clips and reset app state"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
-            </svg>
-          </button>
-          <button
-            className={styles.previewButton}
-            onClick={onPreviewClick}
-            disabled={clips.length === 0}
-            title="Generate preview of the final composition"
-          >
-            🎬 Preview
-          </button>
-          <button
-            className={styles.exportButton}
-            onClick={onExportClick}
-            disabled={clips.length === 0}
-            title="Export timeline to video file (Cmd+E)"
-          >
-            Export
-          </button>
-          {onShowShortcuts && (
-            <button
-              className={styles.shortcutsButton}
-              onClick={onShowShortcuts}
-              title="Show keyboard shortcuts (Cmd+?)"
+              className={styles.actionButton}
+              onClick={handleReset}
+              title="Clear timeline"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M10 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 0a3 3 0 0 1 3-3m-3 3a3 3 0 0 0-3-3"/>
-                <path d="M21 12h-3.5M3 12h3.5M12 3v3.5M12 21v-3.5"/>
-                <circle cx="12" cy="12" r="10"/>
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
               </svg>
-              <span>Shortcuts</span>
+              <span>Clear</span>
             </button>
+          </div>
+          
+          <div className={styles.spacer} />
+          
+          {/* Output Actions Group */}
+          <div className={styles.controlGroup}>
+            <button
+              className={styles.previewButton}
+              onClick={onPreviewClick}
+              disabled={clips.length === 0}
+              title="Preview composition"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span>Preview</span>
+            </button>
+            <button
+              className={styles.exportButton}
+              onClick={onExportClick}
+              disabled={clips.length === 0}
+              title="Export video (Cmd+E)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Export</span>
+            </button>
+          </div>
+          
+          {onShowShortcuts && (
+            <>
+              <div className={styles.divider} />
+              <button
+                className={styles.iconButton}
+                onClick={onShowShortcuts}
+                title="Keyboard shortcuts (Cmd+?)"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </button>
+            </>
           )}
         </div>
       </div>

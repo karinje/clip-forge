@@ -174,10 +174,18 @@
   - Show: import, screen recording, webcam, timeline editing, multi-track PiP, split/trim, export
   - Upload to YouTube/Vimeo and include link in submission
 
+**Recently Completed**
+- ✅ **PR-16**: Audio Overlay & Export Modal Polish (MP3 import, audio-only extraction, volume control, FFmpeg audio mixing)
+- ✅ **Export Settings Panel**: Persistent export configuration with dropdown UI
+- ✅ **Preview Composition**: Render full composition to temporary file before export
+- ✅ **Header Layout Optimization**: Logical workflow order (Record → Export Settings → Export Video → Reset)
+
 **Remaining Tasks**
-- ⏳ **PR-16**: Project Save/Load (JSON file format) `[OPTIONAL - NICE TO HAVE]`
-- ⏳ **PR-17**: Easy Stretch Goals (Audio, Shortcuts) `[STRETCH - EASY]`
-- ⏳ **PR-18**: Advanced Stretch Goals (Text, Transitions, Effects) `[STRETCH - ADVANCED]`
+- ⏳ **PR-17**: Project Save/Load (JSON file format) `[OPTIONAL - NICE TO HAVE]`
+- ⏳ **PR-18**: Easy Stretch Goals (Audio fade effects, Enhanced shortcuts) `[STRETCH - EASY]`
+- ⏳ **PR-19**: Advanced Stretch Goals (Text, Transitions, Effects) `[STRETCH - ADVANCED]`
+- ⏳ **Camera + Screen PiP Recording**: Simultaneous recording with live preview `[STRETCH]`
+- ⏳ **Video Speed Adjustment**: Slow motion and fast forward `[STRETCH]`
 
 ### 📦 Deliverables Status
 
@@ -2485,6 +2493,41 @@ clipforge/
 - ✅ Drag-and-drop still works on main timeline
 
 **Deliverable**: Professional audio overlay and mixing capabilities
+
+---
+
+### Export Settings & UI Polish `[COMPLETED - October 30, 2025]`
+**Time Estimate**: 2-3 hours  
+**Priority**: HIGH - User experience improvement  
+**Risk Level**: LOW
+
+**Status**: ✅ **COMPLETED** (2025-10-30)
+
+**Tasks**:
+- [x] Create export settings store with persistence (localStorage)
+- [x] Build Export Settings panel component with dropdown UI
+- [x] Add settings: format, quality, duration mode, PiP position, PiP scale
+- [x] Integrate settings with Preview Composition feature
+- [x] Initialize Export Dialog with settings defaults
+- [x] Relocate Export Settings from sidebar to app header
+- [x] Position next to Export Video button for better accessibility
+- [x] Style as professional dropdown panel with settings icon
+- [x] Optimize header button sequence for logical workflow
+- [x] Reorganize timeline toolbar with visual groupings
+- [x] Add dividers between control groups
+- [x] Improve button consistency and spacing
+
+**Acceptance Criteria**:
+- ✅ Export Settings persist across app sessions
+- ✅ Preview Composition uses export settings
+- ✅ Export Dialog initializes from settings
+- ✅ Export Settings accessible from header (top right)
+- ✅ Dropdown panel doesn't disrupt header layout
+- ✅ Header button order follows workflow: Record → Export Settings → Export Video → Reset
+- ✅ Timeline toolbar groups controls logically
+- ✅ Professional appearance with consistent styling
+
+**Deliverable**: Persistent export settings with accessible UI and logical button layout
 
 ---
 

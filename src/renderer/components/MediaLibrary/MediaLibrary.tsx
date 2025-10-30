@@ -129,4 +129,3 @@ export const MediaLibrary: React.FC = () => {
     </div>
   );
 };
-
