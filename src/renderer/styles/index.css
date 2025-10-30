@@ -105,11 +105,57 @@ body {
 }
 
 .sidebar {
-  width: 280px;
   height: 100%;
   flex-shrink: 0;
   background: var(--color-bg-secondary);
-  border-right: 1px solid var(--color-border);
+  transition: width 0.2s ease;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  padding: 12px 6px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-toggle:hover {
+  background: var(--color-bg-elevated);
+  padding-right: 8px;
+}
+
+.resize-handle {
+  flex-shrink: 0;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  transition: background 0.15s ease;
+}
+
+.resize-handle-vertical {
+  width: 4px;
+  cursor: ew-resize;
+}
+
+.resize-handle-horizontal {
+  height: 4px;
+  cursor: ns-resize;
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+  background: var(--color-accent);
 }
 
 .main {
@@ -119,6 +165,7 @@ body {
   height: 100%;
   background: var(--color-bg-primary);
   overflow: hidden;
+  position: relative;
 }
 
 .placeholder {

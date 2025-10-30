@@ -1,11 +1,10 @@
 .timeline {
-  height: 240px;
+  flex: 1;
   background: var(--color-bg-secondary);
   border-top: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  flex-shrink: 0;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.4);
 }
 
@@ -28,20 +27,55 @@
 
 .controls {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   align-items: center;
 }
 
-.zoomControl {
+.editingControls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding-right: 12px;
+  border-right: 1px solid var(--color-border);
+}
+
+.toolButton {
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolButton:hover:not(:disabled) {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-accent);
+}
+
+.toolButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zoomControls {
   display: flex;
   gap: 4px;
   align-items: center;
+  padding-right: 12px;
+  border-right: 1px solid var(--color-border);
 }
 
 .zoomButton {
-  width: 26px;
-  height: 26px;
-  background: var(--color-bg-secondary);
+  width: 28px;
+  height: 28px;
+  background: transparent;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-primary);
@@ -49,36 +83,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 600;
   transition: all 0.15s ease;
 }
 
 .zoomButton:hover {
   background: var(--color-bg-elevated);
-  border-color: var(--color-border-hover);
-}
-
-.zoomLabel {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  margin-right: 4px;
+  border-color: var(--color-accent);
 }
 
 .resetButton {
-  padding: 5px 12px;
-  background: rgba(255, 69, 58, 0.15);
-  border: 1px solid var(--color-error);
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  color: var(--color-error);
-  font-size: 11px;
-  font-weight: 600;
+  color: rgba(255, 69, 58, 0.8);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s ease;
 }
 
 .resetButton:hover {
-  background: var(--color-error);
-  color: white;
+  background: rgba(255, 69, 58, 0.15);
+  border-color: var(--color-error);
+  color: var(--color-error);
 }
 
 .exportButton {
@@ -106,8 +138,26 @@
 .timelineContent {
   flex: 1;
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: hidden;
   position: relative;
+  /* Enable horizontal scrolling when timeline is zoomed */
+}
+
+.timelineContent::-webkit-scrollbar {
+  height: 8px;
+}
+
+.timelineContent::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+.timelineContent::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.timelineContent::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }
 
 .timelineRuler {
@@ -115,6 +165,7 @@
   background: var(--color-bg-tertiary);
   border-bottom: 1px solid var(--color-border);
   position: relative;
+  z-index: 1;
 }
 
 .tick {
@@ -138,28 +189,51 @@
   flex: 1;
   position: relative;
   background: var(--color-bg-primary);
+  min-width: 100%; /* Allow container to grow beyond viewport */
+  overflow-y: auto; /* Allow vertical scrolling for multiple tracks */
+  padding-top: 18px; /* Space for playhead arrow */
+}
+
+.tracksContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tracksContainer::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+.tracksContainer::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.tracksContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }
 
 .track {
   position: relative;
-  height: 90px;
+  height: 110px;
   border-bottom: 1px solid var(--color-border);
-  padding: 12px 0 12px 8px; /* Minimal left padding */
+  padding: 25px 0 25px 8px;
+  overflow: visible;
+  display: flex;
+  align-items: center;
 }
 
 .overlayTrack {
-  background: rgba(100, 100, 255, 0.05);
+  background: rgba(60, 60, 60, 0.3);
 }
 
 .trackHeader {
   position: absolute;
   left: 8px;
-  top: 12px;
+  top: 18px;
   width: auto;
-  max-width: 150px;
+  max-width: 180px;
   padding: 4px 8px;
-  background: rgba(37, 37, 38, 0.9);
-  border: 1px solid var(--color-border);
+  background: rgba(20, 20, 20, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   display: flex;
   flex-direction: row;
@@ -167,6 +241,7 @@
   gap: 8px;
   z-index: 5;
   pointer-events: auto;
+  backdrop-filter: blur(4px);
 }
 
 .trackName {
@@ -204,35 +279,74 @@
 .muteButton:hover,
 .removeTrackButton:hover {
   background: var(--color-bg-tertiary);
-  border-color: var(--color-accent);
+  border-color: var(--color-border-hover);
 }
 
 .muteButton.muted {
-  background: rgba(255, 59, 48, 0.15);
-  border-color: rgba(255, 59, 48, 0.4);
+  background: rgba(255, 69, 58, 0.1);
+  border-color: rgba(255, 69, 58, 0.3);
+  color: rgba(255, 69, 58, 0.8);
 }
 
 .removeTrackButton {
-  font-size: 18px;
-  color: rgba(255, 59, 48, 0.8);
+  color: rgba(255, 69, 58, 0.6);
+}
+
+.removeTrackButton:hover {
+  color: rgba(255, 69, 58, 0.9);
+  border-color: rgba(255, 69, 58, 0.4);
 }
 
 .addTrackButton {
-  padding: 6px 12px;
+  padding: 5px 10px;
   background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
-  border-radius: var(--radius-md);
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .addTrackButton:hover {
   background: var(--color-bg-tertiary);
-  border-color: var(--color-accent);
+  border-color: var(--color-border-hover);
   color: var(--color-text-primary);
+}
+
+.selectionOverlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 255, 0, 0.2);
+  border-left: 2px solid #ffcc00;
+  border-right: 2px solid #ffcc00;
+  z-index: 90;
+  pointer-events: none;
+}
+
+.selectionMarker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ffcc00;
+  z-index: 95;
+  pointer-events: none;
+}
+
+.markerLabel {
+  position: absolute;
+  top: -20px;
+  left: -15px;
+  background: #ffcc00;
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .playhead {
@@ -240,22 +354,23 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--color-accent);
+  background: #ff3b30;
   z-index: 100;
   pointer-events: none;
-  box-shadow: 0 0 4px rgba(13, 127, 255, 0.6);
 }
 
 .playhead::before {
   content: '';
   position: absolute;
-  top: -6px;
-  left: -6px;
+  top: -16px;
+  left: -9px;
   width: 0;
   height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 8px solid var(--color-accent);
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 16px solid #ff3b30;
+  z-index: 200;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
 .empty {

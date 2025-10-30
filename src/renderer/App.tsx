@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MediaLibrary } from './components/MediaLibrary/MediaLibrary';
 import { PreviewPlayer } from './components/PreviewPlayer/PreviewPlayer';
 import { Timeline } from './components/Timeline/Timeline';
@@ -9,7 +9,40 @@ import './styles/index.css';
 
 export const App: React.FC = () => {
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const [previewHeight, setPreviewHeight] = useState(400);
   const { exportVideo, isExporting, progress, error } = useVideoExport();
+  const playPauseHandlerRef = useRef<(() => void) | null>(null);
+  const isDraggingSidebarRef = useRef(false);
+  const isDraggingPreviewRef = useRef(false);
+  
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingSidebarRef.current) {
+        const newWidth = Math.max(200, Math.min(500, e.clientX));
+        setSidebarWidth(newWidth);
+      } else if (isDraggingPreviewRef.current) {
+        const newHeight = Math.max(200, Math.min(800, e.clientY - 48)); // 48 = header height
+        setPreviewHeight(newHeight);
+      }
+    };
+    
+    const handleMouseUp = () => {
+      isDraggingSidebarRef.current = false;
+      isDraggingPreviewRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
   
   const handleReset = () => {
     // Clear all localStorage (cached state, settings, etc.)
@@ -31,6 +64,18 @@ export const App: React.FC = () => {
     }
   };
   
+  const startSidebarResize = () => {
+    isDraggingSidebarRef.current = true;
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+  };
+  
+  const startPreviewResize = () => {
+    isDraggingPreviewRef.current = true;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+  };
+  
   return (
     <div className="app">
       <header className="app-header">
@@ -44,18 +89,47 @@ export const App: React.FC = () => {
         >
           Reset
         </button>
-        <button className="header-button primary" onClick={handleExportClick}>
+        <button className="header-button primary" onClick={handleExportClick} title="Export timeline to video file">
           Export Video
         </button>
       </header>
       
       <div className="app-workspace">
-        <div className="sidebar">
-          <MediaLibrary />
-        </div>
+        {!sidebarCollapsed && (
+          <>
+            <div className="sidebar" style={{ width: `${sidebarWidth}px` }}>
+              <MediaLibrary />
+            </div>
+            <div 
+              className="resize-handle resize-handle-vertical"
+              onMouseDown={startSidebarResize}
+              title="Drag to resize sidebar"
+            />
+          </>
+        )}
+        <button 
+          className="sidebar-toggle"
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          title={sidebarCollapsed ? 'Show media library' : 'Hide media library'}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            {sidebarCollapsed ? (
+              <path d="M15 18l-6-6 6-6"/>
+            ) : (
+              <path d="M9 18l6-6-6-6"/>
+            )}
+          </svg>
+        </button>
         <div className="main">
-          <PreviewPlayer />
-          <Timeline onExportClick={handleExportClick} />
+          <div style={{ height: `${previewHeight}px`, flexShrink: 0 }}>
+            <PreviewPlayer onPlayPauseHandlerReady={(handler) => { playPauseHandlerRef.current = handler; }} />
+          </div>
+          <div 
+            className="resize-handle resize-handle-horizontal"
+            onMouseDown={startPreviewResize}
+            title="Drag to resize preview"
+          />
+          <Timeline onExportClick={handleExportClick} playPauseHandler={playPauseHandlerRef} />
         </div>
       </div>
       

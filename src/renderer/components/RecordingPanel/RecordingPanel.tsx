@@ -336,7 +336,7 @@ export const RecordingPanel: React.FC = () => {
           <div className={styles.modalContent}>
             <div className={styles.header}>
               <h2>Record Video</h2>
-              <button className={styles.closeButton} onClick={() => setIsOpen(false)}>×</button>
+              <button className={styles.closeButton} onClick={() => setIsOpen(false)} title="Close recording panel">×</button>
             </div>
             
             <div className={styles.tabs}>
@@ -344,6 +344,7 @@ export const RecordingPanel: React.FC = () => {
                 className={`${styles.tab} ${recordingType === 'screen' ? styles.active : ''}`}
                 onClick={() => setRecordingType('screen')}
                 disabled={isRecording}
+                title="Record your screen"
               >
                 Screen
               </button>
@@ -351,6 +352,7 @@ export const RecordingPanel: React.FC = () => {
                 className={`${styles.tab} ${recordingType === 'webcam' ? styles.active : ''}`}
                 onClick={() => setRecordingType('webcam')}
                 disabled={isRecording}
+                title="Record from webcam"
               >
                 Webcam
               </button>
@@ -400,11 +402,12 @@ export const RecordingPanel: React.FC = () => {
                   className={styles.startButton}
                   onClick={handleStart}
                   disabled={recordingType === 'screen' && !selectedSource}
+                  title={recordingType === 'screen' ? 'Start screen recording' : 'Start webcam recording'}
                 >
                   Start Recording
                 </button>
               ) : (
-                <button className={styles.stopButton} onClick={stopRecording}>
+                <button className={styles.stopButton} onClick={stopRecording} title="Stop recording">
                   Stop Recording
                 </button>
               )}

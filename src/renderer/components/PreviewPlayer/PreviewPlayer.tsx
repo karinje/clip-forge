@@ -59,7 +59,11 @@ const findSegmentForTime = (segments: PlaySegment[], timelineTime: number): Play
   return null;
 };
 
-export const PreviewPlayer: React.FC = () => {
+interface PreviewPlayerProps {
+  onPlayPauseHandlerReady?: (handler: () => void) => void;
+}
+
+export const PreviewPlayer: React.FC<PreviewPlayerProps> = ({ onPlayPauseHandlerReady }) => {
   const clips = useProjectStore((state) => state.clips);
   const timelineClips = useTimelineStore((state) => state.clips);
   const playheadPosition = useTimelineStore((state) => state.playheadPosition);
@@ -222,6 +226,13 @@ export const PreviewPlayer: React.FC = () => {
 
     rawTogglePlayPause();
   }, [goToSegment, segments, playheadPosition, rawTogglePlayPause, videoRef]);
+
+  // Expose play/pause handler to parent for keyboard shortcuts
+  useEffect(() => {
+    if (onPlayPauseHandlerReady) {
+      onPlayPauseHandlerReady(handlePlayPause);
+    }
+  }, [handlePlayPause, onPlayPauseHandlerReady]);
 
   const currentSource = activeMedia ? `file://${activeMedia.filePath}` : undefined;
 

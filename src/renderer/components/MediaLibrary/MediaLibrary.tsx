@@ -35,6 +35,7 @@ export const MediaLibrary: React.FC = () => {
           className={styles.importButton}
           onClick={importFiles}
           disabled={importing}
+          title="Import video files (MP4, MOV, WebM)"
         >
           {importing ? 'Importing...' : '+ Import'}
         </button>

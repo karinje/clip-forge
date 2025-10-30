@@ -8,8 +8,8 @@
   top: 0;
   bottom: 0;
   width: 100%;
-  background: linear-gradient(135deg, #0d7fff 0%, #0066e0 100%);
-  border: 1.5px solid rgba(13, 127, 255, 0.6);
+  background: #3a7bd5;
+  border: 1.5px solid rgba(58, 123, 213, 0.5);
   border-radius: var(--radius-md);
   cursor: pointer;
   overflow: hidden;
@@ -25,9 +25,10 @@
   height: 52px;
   width: 52px;
   overflow: hidden;
-  border-radius: 2px;
+  border-radius: 3px;
   background: #000;
   pointer-events: none;
+  z-index: 1;
 }
 
 .thumbnail {
@@ -37,20 +38,20 @@
 }
 
 .timelineClip:hover .clipSurface {
-  background: linear-gradient(135deg, #0066e0 0%, #0055c0 100%);
-  border-color: var(--color-accent);
+  background: #4a8be5;
+  border-color: rgba(74, 139, 229, 0.8);
   box-shadow: var(--shadow-md);
 }
 
 .timelineClip.selected .clipSurface {
-  background: linear-gradient(135deg, #0d7fff 0%, #0066e0 100%);
-  border-color: #00c6ff;
-  box-shadow: 0 0 0 2px #00c6ff, 0 0 16px rgba(0, 198, 255, 0.4);
+  background: #3a7bd5;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
 .clipContent {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   padding: 8px;
   height: 100%;
   display: flex;
@@ -58,6 +59,8 @@
   justify-content: center;
   align-items: center;
   pointer-events: none;
+  overflow: hidden;
+  border-radius: var(--radius-md);
 }
 
 .clipName {
@@ -81,26 +84,28 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 14px;
+  width: 12px;
   cursor: ew-resize;
-  background: rgba(255, 255, 255, 0.4);
+  background: #4a90e2;
   transition: all 0.15s ease;
-  z-index: 10;
+  z-index: 20;
+  border: 2px solid #1a5490;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .trimHandle:hover {
-  background: rgba(255, 255, 255, 0.8);
-  width: 18px;
+  background: #5aa0f2;
+  width: 16px;
+  border-color: #2a6ab0;
 }
 
 .trimHandle.left {
   left: 0;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
 
 .trimHandle.right {
   right: 0;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 .trimHandle::after {
@@ -110,9 +115,10 @@
   left: 50%;
   transform: translate(-50%, -50%);
   width: 2px;
-  height: 16px;
-  background: #fff;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.7);
   border-radius: 1px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
 .trimLabel {
@@ -127,15 +133,16 @@
   white-space: nowrap;
   pointer-events: none;
   z-index: 1000;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .leftLabel {
-  left: 20px;
+  left: 12px;
 }
 
 .rightLabel {
-  right: 20px;
+  right: 12px;
 }
 
 .deleteButton {
@@ -174,8 +181,8 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
   pointer-events: none;
   z-index: 1;
 }

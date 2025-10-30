@@ -882,6 +882,148 @@ User drags Clip B end trim from 3s to 5s WHILE playing at 16s timeline (6s video
 
 ---
 
+## Advanced Editing Features (October 30, 2025)
+
+### Split Clip (Loom Model Implementation)
+
+**Behavior**: When splitting a clip at the playhead, BOTH resulting clips:
+- Stay at the SAME timeline position
+- Keep the SAME `originalDuration`
+- Use `trimStart`/`trimEnd` to control which half is visible
+
+**Example**: 10-second clip split at 6s:
+- Clip A: `startTime=0`, `originalDuration=10`, `trimStart=0`, `trimEnd=4` (shows 0-6s)
+- Clip B: `startTime=0`, `originalDuration=10`, `trimStart=6`, `trimEnd=0` (shows 6-10s)
+
+**Result**: Timeline length unchanged, clips visually appear as two separate segments
+
+**Keyboard Shortcut**: `Cmd+K` / `Ctrl+K`
+
+### Duplicate Clip
+
+**Behavior**: Creates a copy of the selected clip and places it at the end of the same track
+
+**Implementation**: New clip gets fresh ID, positioned after last clip on track using `originalDuration` sum
+
+**Keyboard Shortcut**: `Cmd+D` / `Ctrl+D`
+
+### Delete Trimmed Region (Inverse Trim)
+
+**Behavior**: Deletes the visible (playable) portion of a clip, keeping only the trimmed segments as separate clips
+
+**Example**: Clip with `trimStart=2s`, `trimEnd=3s` (from 10s original):
+- Deleting trimmed region removes the 5s middle section
+- Creates two new clips: one with first 2s, one with last 3s
+- Timeline re-sequences to close the gap
+
+**Use Case**: User marks unwanted section with trim handles, then Shift+Delete removes it
+
+**Keyboard Shortcut**: `Shift+Delete`
+
+### Loom-Style Timeline Toolbar
+
+**Visual Controls** (left to right):
+1. **Split Button** (✂️) - Splits selected clip at playhead
+2. **Delete Button** (🗑️) - Removes selected clip entirely
+3. **Duplicate Button** (📋) - Copies selected clip to end of track
+4. **Zoom Out** (−) - Decreases timeline zoom by 30%
+5. **Zoom to Fit** (⊡) - Fits entire timeline in viewport
+6. **Zoom In** (+) - Increases timeline zoom by 30%
+
+**Behavior**:
+- Buttons disabled when no clip selected (except zoom)
+- Tooltips show keyboard shortcuts
+- Grouped with visual separators for clarity
+
+### Timeline Zoom & Scroll
+
+**Zoom Behavior**:
+- Zoom range: 2-200 pixels per second
+- Zoom persists in Zustand store
+- Timeline width expands beyond viewport when zoomed in
+- Horizontal scrollbar appears automatically
+
+**Scrollbar Styling**:
+- Custom styled to match dark theme
+- 8px height, rounded thumb
+- Hover effect for better visibility
+
+### Keyboard Shortcuts Summary
+
+| Shortcut | Action |
+|----------|--------|
+| `Space` | Play/pause video (works globally) |
+| `Delete` or `Backspace` | Remove selected clip (or delete selected I/O region if set) |
+| `Shift+Delete` | Delete trimmed region, keep segments |
+| `Cmd/Ctrl+K` | Split clip at playhead |
+| `Cmd/Ctrl+D` | Duplicate selected clip |
+| `I` | Set IN point for selection at playhead |
+| `O` | Set OUT point for selection at playhead |
+| `Escape` | Clear IN/OUT selection points |
+| Zoom controls | Via toolbar buttons (no keyboard shortcuts) |
+
+### In/Out Point Selection & Deletion
+
+**Behavior**: Professional editor-style region selection for precise deletion:
+1. Position playhead where selection should start
+2. Press `I` to mark IN point (yellow marker appears)
+3. Move playhead to where selection should end
+4. Press `O` to mark OUT point (yellow marker appears)
+5. Yellow highlight shows selected region
+6. Press `Delete` to remove that region
+
+**Visual Indicators**:
+- Yellow overlay between IN and OUT points
+- Yellow vertical lines at marker positions
+- Labels showing "IN" and "OUT" at top of markers
+- Selected region deleted when Delete is pressed
+
+**Escape Behavior**: Press `Escape` to clear selection and abandon marking
+
+### Technical Implementation Notes
+
+**Split Clip Fix**:
+- Previous implementation changed `originalDuration` causing timeline expansion
+- New implementation uses Loom model: both clips at same position with trim markers
+- No re-sequencing needed, timeline length stays constant
+- **Delete split clip fix**: Detects when deleting one of multiple split clips (same position, same originalDuration) and keeps siblings in place instead of re-sequencing the entire track
+
+**Mixed Resolution Handling**:
+- Already implemented in FFmpegService
+- `scale` filter with `force_original_aspect_ratio=decrease`
+- `pad` filter adds black bars to maintain aspect ratio
+- All clips normalized to target resolution (720p/1080p)
+
+**Progress Tracking**:
+- Multi-clip exports show overall progress percentage
+- Per-clip progress tracking available in FFmpeg service
+- Could be enhanced with "Processing clip X of Y" messages
+
+**Modern UI Icons**:
+- Replaced emoji icons with clean SVG line icons
+- Split (✂), Delete (trash), Duplicate (copy), Mute/Unmute, Close (X)
+- Consistent stroke width and styling
+- Icons scale properly at different sizes
+
+**Solo Track Functionality** (Not yet implemented):
+- When you "solo" a track, it mutes ALL other tracks
+- Only the solo'd track plays audio/video
+- Useful for multi-track editing to focus on one track at a time
+- Click "solo" again to un-solo and restore other tracks
+- Common in audio DAWs like Ableton, Pro Tools
+
+**Timeline UI Improvements**:
+- **Playhead Arrow Visibility**: Red triangle arrow positioned with proper z-index and padding to remain visible above all timeline elements
+- **Vertically Centered Clips**: Clips centered in track with equal padding above and below for easier playhead positioning
+- **Increased Track Height**: Tracks expanded to 110px height (from 90px) to provide more clickable area
+- **Collapsible Sidebar**: Media library can be toggled to give more timeline space
+- **Resizable Panels**: Drag borders between sidebar/main and timeline/preview to adjust layout
+- **Modern Trim Handles**: Blue rounded handles (12px wide, 16px on hover) inside clips with white grip indicator
+- **Prominent Playhead**: Red line (2px) with large triangle arrow (16px tall) for clear position marking
+- **Tooltips on All Buttons**: Native browser tooltips via `title` attributes for all interactive elements
+
+---
+
 ## Remember
 
 **A simple, working video editor beats a feature-rich app that crashes.**
