@@ -1,336 +1,276 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useProjectStore } from '../../store/projectStore';
 import { useTimelineStore } from '../../store/timelineStore';
+import type { TimelineClip } from '../../store/timelineStore';
 import { useVideoPlayer } from '../../hooks/useVideoPlayer';
 import { PlaybackControls } from './PlaybackControls';
+import { MediaClip } from '../../types/media.types';
 import styles from './PreviewPlayer.module.css';
+
+const EPSILON = 1e-3;
+
+type PlaySegment = {
+  timelineStart: number;
+  timelineEnd: number;
+  videoOffset: number;
+  clipId: string;
+  media: MediaClip;
+};
+
+const buildSegments = (clips: TimelineClip[], mediaClips: MediaClip[]): PlaySegment[] => {
+  const mediaMap = new Map(mediaClips.map((clip) => [clip.id, clip]));
+  return [...clips]
+    .sort((a, b) => a.startTime - b.startTime)
+    .map((clip): PlaySegment | null => {
+      const media = mediaMap.get(clip.mediaClipId);
+      if (!media) {
+        return null;
+      }
+      const start = clip.startTime + clip.trimStart;
+      const end = clip.startTime + clip.originalDuration - clip.trimEnd;
+      if (end - start <= EPSILON) {
+        return null;
+      }
+      const segment: PlaySegment = {
+        timelineStart: start,
+        timelineEnd: end,
+        videoOffset: clip.trimStart,
+        clipId: clip.id,
+        media,
+      };
+      return segment;
+    })
+    .filter((segment): segment is PlaySegment => segment !== null);
+};
+
+const findSegmentForTime = (segments: PlaySegment[], timelineTime: number): PlaySegment | null => {
+  for (let i = 0; i < segments.length; i += 1) {
+    const segment = segments[i];
+    const isLast = i === segments.length - 1;
+    const startOk = timelineTime >= segment.timelineStart - EPSILON;
+    const endOk = isLast
+      ? timelineTime <= segment.timelineEnd + EPSILON
+      : timelineTime < segment.timelineEnd - EPSILON;
+
+    if (startOk && endOk) {
+      return segment;
+    }
+  }
+  return null;
+};
 
 export const PreviewPlayer: React.FC = () => {
   const clips = useProjectStore((state) => state.clips);
-  const selectedClipId = useProjectStore((state) => state.selectedClipId);
   const timelineClips = useTimelineStore((state) => state.clips);
-  const selectedTimelineClipId = useTimelineStore((state) => state.selectedTimelineClipId);
-  const [videoKey, setVideoKey] = useState(0);
+  const playheadPosition = useTimelineStore((state) => state.playheadPosition);
+  const setPlayheadPosition = useTimelineStore((state) => state.setPlayheadPosition);
+  const selectTimelineClip = useTimelineStore((state) => state.selectTimelineClip);
+  const totalDuration = useTimelineStore((state) => state.duration);
 
-  const {
-    videoRef,
-    isPlaying,
-    currentTime,
-    duration,
-    volume,
-    togglePlayPause,
-    seek,
-    changeVolume,
-  } = useVideoPlayer();
+  const { videoRef, isPlaying, togglePlayPause: rawTogglePlayPause, changeVolume, volume } = useVideoPlayer();
 
-  // Timeline composition: track which clip index we're currently playing
-  const [currentClipIndex, setCurrentClipIndex] = useState(0);
-  
-  // Track absolute timeline position (sum of all clips up to current point)
-  const [absoluteTimelinePosition, setAbsoluteTimelinePosition] = useState(0);
-  
-  const hasTimelineClips = timelineClips.length > 0;
+  const segments = useMemo(() => buildSegments(timelineClips, clips), [timelineClips, clips]);
 
-  const prevTrimRef = useRef({ trimStart: 0, trimEnd: 0 });
-  const lastClipIndexRef = useRef<number | null>(null);
-  
-  // If a timeline clip is selected, use it; otherwise use the playing index
-  const currentTimelineClip = hasTimelineClips 
-    ? (selectedTimelineClipId 
-        ? timelineClips.find(c => c.id === selectedTimelineClipId) || timelineClips[currentClipIndex]
-        : timelineClips[currentClipIndex])
-    : null;
-    
-  const selectedClip = currentTimelineClip
-    ? clips.find((c) => c.id === currentTimelineClip.mediaClipId)
-    : clips.find((c) => c.id === selectedClipId);
-  
-  const selectedTimelineClip = currentTimelineClip;
-  
-  // Calculate total trimmed duration of all timeline clips
-  const totalTrimmedDuration = hasTimelineClips 
-    ? timelineClips.reduce((sum, clip) => sum + clip.duration, 0)
-    : duration;
+  const [activeMedia, setActiveMedia] = useState<MediaClip | null>(null);
+  const shouldResumeRef = useRef(false);
 
-  // Force video reload when timeline clips change (e.g., when dropped)
-  useEffect(() => {
-    setCurrentClipIndex(0); // Reset to first clip
-    setAbsoluteTimelinePosition(0); // Reset position to start
-    setVideoKey(prev => prev + 1);
-  }, [timelineClips.length]);
-
-  // When a timeline clip is selected, jump to that clip and its trimStart
-  useEffect(() => {
-    if (!hasTimelineClips) {
-      setCurrentClipIndex(0);
-      setAbsoluteTimelinePosition(0);
-      prevTrimRef.current = { trimStart: 0, trimEnd: 0 };
-      lastClipIndexRef.current = null;
-      return;
-    }
-
-    if (!selectedTimelineClipId) {
-      const firstClip = timelineClips[0];
-      const nextIndex = firstClip ? 0 : -1;
-
-      setCurrentClipIndex(prev => (nextIndex >= 0 ? (prev === nextIndex ? prev : nextIndex) : prev));
-      if (nextIndex >= 0) {
-        if (lastClipIndexRef.current !== nextIndex) {
-          setVideoKey(prev => prev + 1);
-          lastClipIndexRef.current = nextIndex;
-        }
-
-        setAbsoluteTimelinePosition(0);
-        prevTrimRef.current = {
-          trimStart: firstClip!.trimStart,
-          trimEnd: firstClip!.trimEnd,
-        };
-      }
-      return;
-    }
-
-    const clipIndex = timelineClips.findIndex(c => c.id === selectedTimelineClipId);
-    if (clipIndex === -1) {
-      return;
-    }
-
-    setCurrentClipIndex(prev => (prev === clipIndex ? prev : clipIndex));
-
-    if (lastClipIndexRef.current !== clipIndex) {
-      setVideoKey(prev => prev + 1);
-      lastClipIndexRef.current = clipIndex;
-    }
-
-    const positionBeforeCurrentClip = timelineClips
-      .slice(0, clipIndex)
-      .reduce((sum, clip) => sum + clip.duration, 0);
-
-    setAbsoluteTimelinePosition(positionBeforeCurrentClip);
-    prevTrimRef.current = {
-      trimStart: timelineClips[clipIndex].trimStart,
-      trimEnd: timelineClips[clipIndex].trimEnd,
-    };
-  }, [selectedTimelineClipId, hasTimelineClips, timelineClips]);
+  const goToSegment = useCallback(
+    (segment: PlaySegment, resume: boolean) => {
+      setActiveMedia(segment.media);
+      selectTimelineClip(segment.clipId);
+      setPlayheadPosition(segment.timelineStart);
+      shouldResumeRef.current = resume;
+    },
+    [selectTimelineClip, setPlayheadPosition],
+  );
 
   useEffect(() => {
-    if (!hasTimelineClips) {
+    if (!segments.length) {
+      setActiveMedia(null);
       return;
     }
 
-    if (currentClipIndex < 0 || currentClipIndex >= timelineClips.length) {
+    const segment = findSegmentForTime(segments, playheadPosition);
+    if (!segment) {
+      const first = segments[0];
+      setPlayheadPosition(first.timelineStart);
+      setActiveMedia(first.media);
+      selectTimelineClip(first.clipId);
       return;
     }
 
-    const activeTimelineClip = timelineClips[currentClipIndex];
-    if (!activeTimelineClip) {
-      return;
-    }
-
-    const positionBeforeCurrentClip = timelineClips
-      .slice(0, currentClipIndex)
-      .reduce((sum, clip) => sum + clip.duration, 0);
-
-    let relativePosition = 0;
-    if (videoRef.current) {
-      relativePosition = Math.max(0, videoRef.current.currentTime - activeTimelineClip.trimStart);
-      relativePosition = Math.min(relativePosition, activeTimelineClip.duration);
-    }
-
-    const targetPosition = positionBeforeCurrentClip + relativePosition;
-
-    setAbsoluteTimelinePosition(prev => (
-      Math.abs(prev - targetPosition) > 0.001 ? targetPosition : prev
-    ));
-  }, [timelineClips, currentClipIndex, hasTimelineClips]);
-  
-  // When trim values change on the selected clip, update video position
-  useEffect(() => {
-    if (!videoRef.current || !selectedTimelineClip || !selectedClip) return;
+    setActiveMedia(segment.media);
+    selectTimelineClip(segment.clipId);
 
     const video = videoRef.current;
+    if (!video) {
+      return;
+    }
 
-    const applyTrimUpdate = () => {
-      const prevTrimStart = prevTrimRef.current.trimStart;
-      const prevTrimEnd = prevTrimRef.current.trimEnd;
+    const desiredVideoTime = segment.videoOffset + (playheadPosition - segment.timelineStart);
+    const syncVideo = () => {
+      if (Math.abs(video.currentTime - desiredVideoTime) > 0.01) {
+        video.currentTime = Math.max(0, desiredVideoTime);
+      }
+      if (shouldResumeRef.current) {
+        shouldResumeRef.current = false;
+        video.play().catch(() => undefined);
+      }
+    };
 
-      const trimStartChanged = selectedTimelineClip.trimStart !== prevTrimStart;
-      const trimEndChanged = selectedTimelineClip.trimEnd !== prevTrimEnd;
+    if (video.readyState >= 1) {
+      syncVideo();
+    } else {
+      const handleLoaded = () => {
+        video.removeEventListener('loadedmetadata', handleLoaded);
+        syncVideo();
+      };
+      video.addEventListener('loadedmetadata', handleLoaded);
+    }
+  }, [segments, playheadPosition, selectTimelineClip, setPlayheadPosition, videoRef]);
 
-      if (!trimStartChanged && !trimEndChanged) {
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isPlaying) {
+      return;
+    }
+
+    let rafId = 0;
+
+    const updatePlayhead = () => {
+      const segment = findSegmentForTime(segments, useTimelineStore.getState().playheadPosition);
+      if (!segment) {
         return;
       }
 
-      const positionBeforeCurrentClip = timelineClips
-        .slice(0, currentClipIndex)
-        .reduce((sum, tlClip) => sum + tlClip.duration, 0);
+      const playableDuration = segment.timelineEnd - segment.timelineStart;
+      const segmentEndVideoTime = segment.videoOffset + playableDuration;
 
-      if (!video.paused) {
-        video.pause();
+      if (video.currentTime >= segmentEndVideoTime - EPSILON) {
+        const index = segments.findIndex((item) => item.clipId === segment.clipId);
+        const nextSegment = segments[index + 1];
+
+        if (nextSegment) {
+          goToSegment(nextSegment, true);
+        } else {
+          setPlayheadPosition(segment.timelineEnd);
+          shouldResumeRef.current = false;
+        }
+        return;
       }
 
-      if (trimStartChanged) {
-        video.currentTime = selectedTimelineClip.trimStart;
-        setAbsoluteTimelinePosition(positionBeforeCurrentClip);
-        // Trimming from start
+      const timelineTime = segment.timelineStart + (video.currentTime - segment.videoOffset);
+      if (!Number.isNaN(timelineTime)) {
+        const clamped = Math.max(segment.timelineStart, Math.min(segment.timelineEnd, timelineTime));
+        if (Math.abs(clamped - useTimelineStore.getState().playheadPosition) > EPSILON) {
+          setPlayheadPosition(clamped);
+        }
       }
-
-      if (trimEndChanged) {
-        const newEndPosition = selectedClip.duration - selectedTimelineClip.trimEnd;
-        video.currentTime = newEndPosition;
-        const finalPosition = positionBeforeCurrentClip + selectedTimelineClip.duration;
-        setAbsoluteTimelinePosition(finalPosition);
-        // Trimming from end
-      }
-
-      prevTrimRef.current = {
-        trimStart: selectedTimelineClip.trimStart,
-        trimEnd: selectedTimelineClip.trimEnd
-      };
     };
 
-    if (video.readyState >= 2) {
-      applyTrimUpdate();
+    const tick = () => {
+      updatePlayhead();
+      rafId = window.requestAnimationFrame(tick);
+    };
+
+    rafId = window.requestAnimationFrame(tick);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
+  }, [goToSegment, segments, isPlaying, setPlayheadPosition, videoRef]);
+
+  const handlePlayPause = useCallback(() => {
+    if (!segments.length) {
       return;
     }
 
-    const handleCanPlay = () => {
-      applyTrimUpdate();
-      video.removeEventListener('canplay', handleCanPlay);
-    };
-
-    video.addEventListener('canplay', handleCanPlay);
-
-    return () => {
-      video.removeEventListener('canplay', handleCanPlay);
-    };
-  }, [selectedTimelineClip?.trimStart, selectedTimelineClip?.trimEnd, selectedClip, timelineClips, currentClipIndex]);
-
-  useEffect(() => {
-    // Reload video when selection changes or videoKey changes
-    if (videoRef.current && selectedClip) {
-      
-      const video = videoRef.current;
-      
-      // Force reload with explicit rendering hints
-      video.load();
-      
-      // Wait for metadata to be loaded before attempting to render
-      const handleLoadedMetadata = () => {
-        
-        // Set explicit dimensions to force rendering
-        if (video.videoWidth && video.videoHeight) {
-          video.style.width = '100%';
-          video.style.height = '100%';
-        }
-        
-        // If there's a timeline clip with trim, seek to the trimmed start point
-        if (selectedTimelineClip && selectedTimelineClip.trimStart > 0) {
-          video.currentTime = selectedTimelineClip.trimStart;
-        }
-        
-        // Calculate correct absolute position for this clip
-        const positionBeforeCurrentClip = timelineClips
-          .slice(0, currentClipIndex)
-          .reduce((sum, clip) => sum + clip.duration, 0);
-        setAbsoluteTimelinePosition(positionBeforeCurrentClip);
-        
-        // Try to play briefly to initialize rendering pipeline
-        video.play()
-          .then(() => {
-            video.pause();
-            if (selectedTimelineClip && selectedTimelineClip.trimStart > 0) {
-              video.currentTime = selectedTimelineClip.trimStart;
-            } else {
-              video.currentTime = 0;
-            }
-          })
-          .catch((err) => {
-            // Ignore AbortError - it happens when video is changed during loading
-            if (err.name !== 'AbortError') {
-              // Video play error (user interaction may be required)
-            }
-          });
-      };
-      
-      if (video.readyState >= 1) {
-        // Metadata already loaded
-        handleLoadedMetadata();
-      } else {
-        video.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
-      }
-      
-      return () => {
-        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      };
-    }
-  }, [selectedClip, videoKey]); // Removed selectedTimelineClip to prevent infinite reload
-
-  // Enforce trim boundaries during playback AND update absolute timeline position
-  useEffect(() => {
-    if (!videoRef.current || !selectedTimelineClip) return;
-    
     const video = videoRef.current;
-    const trimEnd = selectedClip!.duration - selectedTimelineClip.trimEnd;
-    
-    // Calculate position up to current clip
-    const positionBeforeCurrentClip = timelineClips
-      .slice(0, currentClipIndex)
-      .reduce((sum, clip) => sum + clip.duration, 0);
-    
-    const handleTimeUpdate = () => {
-      // Update absolute timeline position
-      const relativePosition = Math.max(0, video.currentTime - selectedTimelineClip.trimStart);
-      setAbsoluteTimelinePosition(positionBeforeCurrentClip + relativePosition);
-      
-      // If video goes past trim end, advance to next clip or stop
-      if (video.currentTime >= trimEnd) {
-        
-        // Check if there's a next clip
-        if (hasTimelineClips && currentClipIndex < timelineClips.length - 1) {
-          setCurrentClipIndex(currentClipIndex + 1);
-          setVideoKey(prev => prev + 1); // Force reload
-        } else {
+
+    const firstSegment = segments[0];
+    const lastSegment = segments[segments.length - 1];
+    const currentSegment = findSegmentForTime(segments, playheadPosition);
+
+    const atTimelineEnd = Math.abs(playheadPosition - lastSegment.timelineEnd) <= EPSILON;
+    const atSegmentEnd = currentSegment
+      ? Math.abs(playheadPosition - currentSegment.timelineEnd) <= EPSILON
+      : false;
+
+    if (atTimelineEnd || (!currentSegment && playheadPosition > lastSegment.timelineEnd - EPSILON)) {
+      goToSegment(firstSegment, true);
+      if (video) {
+        video.pause();
+      }
+      return;
+    }
+
+    if (currentSegment && atSegmentEnd && segments.length > 1) {
+      const index = segments.findIndex((segment) => segment.clipId === currentSegment.clipId);
+      const nextSegment = segments[index + 1];
+      if (nextSegment) {
+        goToSegment(nextSegment, true);
+        if (video) {
           video.pause();
-          video.currentTime = trimEnd;
         }
+        return;
       }
-      
-      // If video goes before trim start, reset to trim start
-      if (video.currentTime < selectedTimelineClip.trimStart) {
-        video.currentTime = selectedTimelineClip.trimStart;
-      }
-    };
-    
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    
-    return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-    };
-  }, [selectedClip?.duration, selectedTimelineClip?.trimStart, selectedTimelineClip?.trimEnd, currentClipIndex, hasTimelineClips, timelineClips.length]); // Add dependencies for auto-advance
+    }
 
-  // Keyboard shortcut: Space to play/pause
+    if (!video) {
+      return;
+    }
+
+    rawTogglePlayPause();
+  }, [goToSegment, segments, playheadPosition, rawTogglePlayPause, videoRef]);
+
+  const currentSource = activeMedia ? `file://${activeMedia.filePath}` : undefined;
+
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && selectedClip) {
-        e.preventDefault();
-        togglePlayPause();
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+
+    const handleEnded = () => {
+      if (!segments.length) {
+        return;
       }
+
+      const currentPosition = useTimelineStore.getState().playheadPosition;
+      const currentSegment = findSegmentForTime(segments, currentPosition) || segments[segments.length - 1];
+      const index = segments.findIndex((segment) => segment.clipId === currentSegment.clipId);
+
+      if (index === -1) {
+        return;
+      }
+
+      const nextSegment = segments[index + 1];
+
+      if (!nextSegment) {
+        setPlayheadPosition(currentSegment.timelineEnd);
+        return;
+      }
+
+      goToSegment(nextSegment, true);
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedClip, togglePlayPause]);
+    video.addEventListener('ended', handleEnded);
+
+    return () => {
+      video.removeEventListener('ended', handleEnded);
+    };
+  }, [goToSegment, segments, setActiveMedia, setPlayheadPosition, videoRef]);
 
   return (
     <div className={styles.previewPlayer}>
       <div className={styles.videoContainer}>
-        {selectedClip ? (
+        {activeMedia ? (
           <video
-            key={`${selectedClip.id}-${videoKey}`}
+            key={activeMedia.id}
             ref={videoRef}
             className={styles.video}
-            src={`file://${selectedClip.filePath}`}
-            preload="metadata"
+            src={currentSource}
+            preload="auto"
             playsInline
             crossOrigin="anonymous"
           >
@@ -339,20 +279,18 @@ export const PreviewPlayer: React.FC = () => {
         ) : (
           <div className={styles.noVideo}>
             <div className={styles.icon}>🎬</div>
-            <div className={styles.text}>Select a clip to preview</div>
-            <div className={styles.hint}>Import videos from the media library</div>
+            <div className={styles.text}>Drop clips on the timeline to preview</div>
           </div>
         )}
       </div>
 
-      {selectedClip && (
+      {segments.length > 0 && (
         <PlaybackControls
           isPlaying={isPlaying}
-          currentTime={absoluteTimelinePosition}
-          duration={totalTrimmedDuration}
+          currentTime={playheadPosition}
+          duration={totalDuration}
           volume={volume}
-          onPlayPause={togglePlayPause}
-          onSeek={seek}
+          onPlayPause={handlePlayPause}
           onVolumeChange={changeVolume}
         />
       )}

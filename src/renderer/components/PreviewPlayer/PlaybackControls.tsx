@@ -7,7 +7,6 @@ interface Props {
   duration: number;
   volume: number;
   onPlayPause: () => void;
-  onSeek: (time: number) => void;
   onVolumeChange: (volume: number) => void;
 }
 
@@ -17,7 +16,6 @@ export const PlaybackControls: React.FC<Props> = ({
   duration,
   volume,
   onPlayPause,
-  onSeek,
   onVolumeChange,
 }) => {
   const formatTime = (seconds: number) => {
@@ -27,17 +25,10 @@ export const PlaybackControls: React.FC<Props> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleSeekBarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
-    onSeek(time);
-  };
-
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     onVolumeChange(newVolume);
   };
-
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div className={styles.controls}>
@@ -45,32 +36,8 @@ export const PlaybackControls: React.FC<Props> = ({
         {isPlaying ? '⏸' : '▶'}
       </button>
 
-      <div className={styles.timeline}>
-        <span className={styles.time}>0:00</span>
-        <div className={styles.seekBarContainer}>
-          <input
-            type="range"
-            min={0}
-            max={duration || 0}
-            value={currentTime}
-            onChange={handleSeekBarChange}
-            className={styles.seekBar}
-            style={{
-              background: `linear-gradient(to right, #0e639c ${progress}%, #3e3e42 ${progress}%)`,
-            }}
-          />
-          {currentTime > 0 && (
-            <div 
-              className={styles.currentTimeLabel}
-              style={{
-                left: `${progress}%`,
-              }}
-            >
-              {formatTime(currentTime)}
-            </div>
-          )}
-        </div>
-        <span className={styles.time}>{formatTime(duration)}</span>
+      <div className={styles.timeDisplay}>
+        {formatTime(currentTime)} / {formatTime(duration)}
       </div>
 
       <div className={styles.volumeContainer}>

@@ -118,8 +118,47 @@ export function registerExportHandlers() {
       };
     }
   });
+  
+  // Multi-track export (with picture-in-picture)
+  ipcMain.handle(IPC_CHANNELS.VIDEO_EXPORT_MULTITRACK, async (event, options) => {
+    try {
+      const { tracks, outputPath, format, quality, pipConfig } = options;
+      
+      logger.info('Exporting multi-track timeline:', { trackCount: tracks.length, outputPath });
+      
+      await ffmpegService.exportMultiTrack({
+        tracks: tracks.map((track: any) => ({
+          clips: track.clips.map((clip: any) => ({
+            filePath: clip.filePath,
+            trimStart: clip.trimStart,
+            trimEnd: clip.trimEnd,
+            duration: clip.duration,
+          })),
+          type: track.type,
+          muted: track.muted,
+        })),
+        outputPath,
+        format,
+        quality,
+        pipConfig: pipConfig || { position: 'bottom-right', scale: 0.25 },
+        onProgress: (percent) => {
+          logger.info(`Multi-track export progress: ${percent.toFixed(2)}%`);
+          event.sender.send('export-progress', percent);
+        },
+      });
+      
+      logger.info('Multi-track export successful:', outputPath);
+      
+      return {
+        success: true,
+        outputPath,
+      };
+    } catch (error: any) {
+      logger.error('Multi-track export failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Multi-track export failed',
+      };
+    }
+  });
 }
-
-
-
-

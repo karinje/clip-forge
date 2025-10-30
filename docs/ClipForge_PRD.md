@@ -453,9 +453,432 @@ This PRD defines the scope for both milestones, provides detailed user stories, 
 
 ### Upgrade Strategy: Trim Handle UX
 
-- Current behaviour keeps the preview seek label anchored to the clip’s in-point for stability across multi-clip timelines.
+- Current behaviour keeps the preview seek label anchored to the clip's in-point for stability across multi-clip timelines.
 - Next iteration should track which trim handle is active so dragging the out-point pins the label to the combined out-point, while dragging the in-point keeps it at the clip start.
 - Store-level metadata (e.g. `activeTrimHandle`) will unblock keyboard nudges, snapping, and richer visual feedback without rewriting the trimming flow.
+
+---
+
+## Simplified Preview & Playback Model (October 29, 2025)
+
+### The Loom Model: Timeline as Immutable Sequence
+
+**Core Principle**: Timeline represents the FULL LENGTH of all clips laid out sequentially. Trim handles mark sections to SKIP during playback, but never change clip positions or total timeline duration.
+
+#### Example Timeline:
+```
+Clip 1: 10s original (trim 2s start, 3s end → 5s playable)
+Clip 2: 8s original (no trim → 8s playable)
+Total Timeline: 18s (always, regardless of trimming)
+
+Timeline visualization:
+[0---2-TRIMMED-2--7-PLAY-7---10-TRIMMED-10][10-------18-PLAY-------18]
+ Clip 1 (10s total)                          Clip 2 (8s total)
+```
+
+### 1. Timeline Positioning Rules
+
+- **Clip positions calculated from originalDuration ONLY**
+  - Clip N starts at: sum of all previous clips' `originalDuration`
+  - Example: Clip 2 always starts at 10s, even if Clip 1 is trimmed to 5s playable
+  
+- **Trim changes NEVER reposition clips**
+  - Adjusting trim handles only updates trim metadata
+  - All clips stay in same timeline positions
+  - Total timeline duration never changes
+
+- **Data structure maintains both durations**
+  - `originalDuration`: full clip length (immutable after import)
+  - `duration`: playable length after trimming (for export calculations)
+  - `trimStart`, `trimEnd`: trim amounts in seconds
+  - `startTime`: position on timeline (from originalDuration sum)
+
+### 2. Trim as Skip Markers
+
+- **Trim regions are "holes" in the timeline**
+  - Playhead can be positioned in trimmed areas (via timeline click)
+  - But playback automatically skips over them
+  
+- **Real-time trim updates during playback**
+  - If playing and user drags trim handle, playback logic instantly reflects change
+  - Example: Playing at 7.5s in Clip 1, user moves end trim from 3s to 4s
+    - Clip 1 playable region shrinks from 2-7s to 2-6s
+    - Playhead at 7.5s is now in trimmed region
+    - Playback immediately jumps to Clip 2 at 10s
+  
+- **Trim handles update in data structure immediately**
+  - Store: `trimStart`, `trimEnd` updated on drag
+  - Playback logic queries current trim values each frame
+  - No need to wait for drag completion
+
+### 3. Playhead Synchronization Model
+
+**Single Source of Truth**: There is only ONE playhead position that represents both:
+- Where we are in the timeline (in seconds from start)
+- Which video frame is displayed in the player
+
+**Playhead is ALWAYS synced with the displayed video frame:**
+- During playback: video plays → playhead updates to match
+- Manual positioning: playhead moved (timeline click) → video seeks to match
+- **Playback state is preserved**: If playing when timeline clicked → continues playing from new position
+- No separate "internal" vs "external" playhead
+- No delay between video position and playhead position
+
+**Manual seek behavior**:
+- User clicks timeline while video is paused → seeks to position, stays paused
+- User clicks timeline while video is playing → seeks to position, **keeps playing**
+- This applies to both same-clip seeks and cross-clip seeks
+- Rationale: User expects continuous playback, not interruption from scrubbing
+
+### 4. Playback Skip Logic
+
+**Overview**: This section defines how the video player handles trimmed regions during all playback scenarios - pressing play from a paused state, dynamic trim changes during playback, and continuous multi-clip playback.
+
+**Core Principles**:
+1. **Never play trimmed content**: Trimmed regions are invisible to playback
+2. **Always jump to start**: When skipping to next clip, go to its `trimStart` (never end)
+3. **Preserve playback state**: If playing when trim forces jump, continue playing after jump
+4. **Check trim first**: Detect trim status before updating playhead to prevent race conditions
+5. **Real-time responsiveness**: Trim changes during playback take effect immediately
+
+#### When Play is Pressed from Trimmed Region
+
+**Example**: User clicks at 2s on timeline (in Clip 1's start trim), then presses play:
+1. Playhead is at 2s (in trimmed region before 2.5s trimStart)
+2. User presses play
+3. **Immediately** jump:
+   - Playhead moves to 2.5s (first non-trimmed position)
+   - Video seeks to show frame at 2.5s
+4. Start playing from 2.5s
+
+**Example 2**: User clicks at 8s on timeline (in Clip 1's end trim), then presses play:
+1. Playhead at 8s (in trimmed region after 7.5s playable end)
+2. User presses play  
+3. **Immediately** jump:
+   - Playhead moves to 10.5s (Clip 2 start + its trimStart of 0.5s)
+   - Video switches to Clip 2 and shows frame at 0.5s
+4. Start playing from Clip 2
+
+**Key**: No playing through trimmed regions. Instant jump on play press.
+
+#### During Playback
+- Video plays normally
+- Each video frame update:
+  - Update playhead to: `clipStart + video.currentTime`
+  - Check if video.currentTime is in trimmed region:
+    - Before `trimStart`: jump video to `trimStart`, update playhead
+    - After `originalDuration - trimEnd`: advance to next clip, update playhead
+  - Playhead and video stay perfectly synced
+
+#### Trim Boundary Detection
+For clip at position `clipStart` with `trimStart` and `trimEnd`:
+- Trimmed region 1 (start): `[clipStart, clipStart + trimStart)`
+- Playable region: `[clipStart + trimStart, clipStart + originalDuration - trimEnd)`
+- Trimmed region 2 (end): `[clipStart + originalDuration - trimEnd, clipStart + originalDuration)`
+
+#### Auto-Advance Behavior
+When video reaches end of playable region **during playback**:
+1. Detect end of playable section
+2. Calculate next clip's playable start: `nextClipStart + nextClip.trimStart`
+3. Jump playhead to that position
+4. Switch to next clip video
+5. **Continue playing** - do NOT pause
+
+**Critical**: If playing through multiple clips, playback should be continuous. Only pause when:
+- User presses pause
+- Reaches end of timeline (no more clips)
+- User clicks timeline (explicit seek)
+
+**Known limitation**: Brief gap (~100-300ms) when switching between clips due to video element reload. This is inherent to web-based video playback:
+- Browser must load new video metadata
+- Decode first frames of next clip
+- Cannot be eliminated without complex MediaSource API or WebCodecs
+- Professional web editors (CapCut, Descript, Clipchamp) have same limitation
+(Optimized preload helps but cannot eliminate entirely)
+
+**Key Point**: Playhead and video frame are ALWAYS in sync. The playhead position in seconds directly corresponds to the frame being displayed.
+
+### 4.1 Dynamic Trimming Behavior
+
+**Scenario 1: Trimming while paused**
+- User trims a clip while video is paused
+- Playhead may now be in a trimmed region
+- When user presses play:
+  - If in start trim → jump to `trimStart` of current clip, then play
+  - If in end trim → jump to `trimStart` of next clip, then play (or do nothing if no next clip)
+  - Playback MUST start, not remain paused
+
+**Scenario 2: Trimming during playback (critical edge case)**
+- User moves end trim handle of currently playing clip WHILE playhead is progressing
+- Example: Playhead at 5s of 10s clip, user drags end trim to 4s
+- Expected behavior:
+  1. Video detects playhead is now in trimmed region (5s > 4s playable)
+  2. Immediately jumps to START (`trimStart`) of next clip on same track
+  3. Continues playing seamlessly (no pause)
+  4. Never jumps to end of next clip (always start)
+- Implementation requirement:
+  - Check trim status BEFORE updating playhead position in `timeupdate` handler
+  - This prevents race condition where playhead update triggers external sync effect
+  - Only update playhead position if in valid (non-trimmed) region
+
+**Scenario 3: Auto-advancing at clip end**
+- Playhead reaches end trim of current clip during playback
+- Next clip exists on same track
+- Expected behavior:
+  1. Capture current playing state: `resumePlaybackRef = isPlaying` 
+     - **CRITICAL**: Use `isPlaying` state, NOT `!video.paused`
+     - Browser may auto-pause video at clip end before timeupdate fires
+     - `isPlaying` tracks intended state via play/pause events
+  2. Load next clip at its `trimStart` position
+  3. If `resumePlaybackRef` is true → auto-play immediately (no pause)
+  4. If `resumePlaybackRef` is false → stay paused
+- Critical: Playback state must be preserved across clip transitions
+
+**Race condition prevention** (critical for avoiding infinite loops):
+
+**Problem**: Three systems update playhead position:
+1. `timeupdate` handler (4-10 Hz, for logic like trim detection)
+2. `requestAnimationFrame` loop (60 Hz, for smooth visual updates)  
+3. External sync effect (responds to manual timeline clicks)
+
+During clip transitions, these can conflict and create infinite loops.
+
+**Solution**: Use `pendingSeekRef` as a "transition in progress" flag:
+
+```
+Auto-advance sequence:
+1. timeupdate detects end trim
+2. Sets pendingSeekRef = nextClip.trimStart (LOCK)
+3. Sets resumePlaybackRef = wasPlaying (`resumePlaybackRef.current || !video.paused || isPlaying`)
+4. Immediately sets playheadPosition to next clip’s playable start
+5. Switches clip (setCurrentClipIndex, setVideoKey)
+6. RAF loop checks pendingSeekRef → skips playhead update
+7. External sync checks pendingSeekRef → skips interference
+8. Video loads, applies pendingSeek, clears it (UNLOCK)
+9. Normal playback resumes
+
+Manual clip switch sequence:
+1. User clicks timeline on different clip
+2. External sync detects targetClipIndex !== currentClipIndex
+3. Calculates offsetInTargetClip = playheadPosition - targetClip.startTime
+4. Sets pendingSeekRef = offsetInTargetClip (LOCK - prevents RAF corruption)
+5. Sets resumePlaybackRef = isPlaying (preserve playback state)
+6. Switches clip (setCurrentClipIndex, setVideoKey)
+7. Video loads, applies pendingSeek to exact clicked position
+8. Continues playing if was playing, stays paused if was paused
+
+timeupdate handler order:
+1. Check if pendingSeekRef exists → skip if true
+1a. Check if atEndOfTimelineRef is true → skip (prevents repeated stop logic)
+2. Check trim status FIRST (before any playhead updates)
+3. If in trim region → handle jump/advance → return early
+4. Only if valid region → update playhead position
+
+RAF loop order:
+1. Check if pendingSeekRef exists → skip playhead update, continue loop
+2. Calculate playhead position = clipStart + video.currentTime
+3. **Clamp to trim boundaries**: playhead must stay within [clipStart + trimStart, clipStart + (originalDuration - trimEnd)]
+4. Update playhead position with clamped value
+
+**Critical**: Clamping prevents visual overshoot. Without it, RAF updates playhead past trim boundary before timeupdate detects it, causing playhead to appear outside trim handles.
+
+When stopping at final clip end:
+- Clamp video.currentTime to the playable end (`originalDuration - trimEnd`)
+- Set playheadPosition = `clip.startTime + playableEnd`
+- Set `atEndOfTimelineRef = true` so subsequent timeupdate/RAF cycles exit early
+
+External sync order:
+1. Check if pendingSeekRef exists → return early (don't interfere)
+2. Check if atEndOfTimelineRef is true → return early (don't interfere with pause state)
+3. If playhead is outside playable region (in trim) → return early (let timeupdate handle skip)
+3. Find which clip contains playhead position
+4. Switch clip if needed, or seek within same clip
+```
+
+This ensures no system interferes during clip transitions.
+
+**End-of-timeline flag (`atEndOfTimelineRef`)**:
+- Set to `true` when playback reaches end and pauses
+- Prevents external sync effect from reloading video (which corrupts play/pause button state)
+- Also forces the play/pause button to show **play** even if a stray `play` event fires
+- Cleared when:
+  - User clicks play/pause button
+  - Auto-advancing to next clip
+  - Playing normally in non-trimmed region
+- Critical for maintaining correct button state at end of timeline
+
+### 4.2 Play/Pause Button State
+
+**Critical requirement**: Button icon must ALWAYS reflect the opposite of current playback state:
+- Video is playing → Button shows **PAUSE** icon
+- Video is paused → Button shows **PLAY** icon
+
+**Implementation**:
+- Button state driven by video element events: `play`, `pause`, `ended`
+- `useVideoPlayer` hook listens to these events and updates `isPlaying` state
+- State updates happen automatically, not manually
+
+**Edge cases requiring correct button state**:
+1. **End of timeline**: Playhead reaches end → video auto-pauses → button shows "play"
+2. **Manual pause**: User clicks pause → video pauses → button shows "play"
+3. **Trim jump while paused**: User in trim region, presses play → video plays → button shows "pause"
+4. **Trim jump during playback**: Video auto-advances to next clip → continues playing → button stays "pause"
+5. **Manual timeline click**: User clicks timeline → video pauses for seek → button shows "play" (if was paused)
+
+**Never manually set playing state** - always let video events drive the state.
+
+### 4.2.1 End-of-Timeline Behavior
+
+When playback reaches the end of the final clip:
+- Video pauses automatically and emits the native `pause` event
+- Play/pause button switches to the **play** icon immediately
+- Playhead remains at the end-of-timeline position (no rewind)
+- Pressing play at the end rewinds to the first segment’s `trimStart` and restarts playback
+- Manual repositioning is still supported (e.g., clicking the timeline will jump to that position and continue playing if active)
+
+**Goal**: Button state always reflects the fact that playback is paused, without forcing an automatic restart.
+
+### 4.3 Comprehensive Behavior Summary
+
+**Golden Rules**:
+1. **Timeline = source of truth**: All clips positioned by `originalDuration`, trims are skip markers
+2. **Playhead = current position**: Always synced with video frame, measured in timeline seconds
+3. **Trim = skip region**: Defines what to skip during playback/export, doesn't change clip position
+4. **Check trim first**: In `timeupdate`, check trim status before updating playhead (prevents race conditions)
+5. **Preserve playback state**: When auto-advancing, capture `wasPlaying` and restore it
+6. **Jump to start**: Always jump to `trimStart` of target clip, never end
+7. **Button follows video**: Play/pause button state driven by video events, never manual
+
+**Complete playback flow example**:
+```
+Timeline: [Clip A: 0-10s, trimEnd=2s] [Clip B: 10-20s, trimStart=1s, trimEnd=3s] [Clip C: 20-30s]
+
+User presses play at 0s:
+→ Plays 0s-8s of Clip A (stops at trimEnd: 10s - 2s = 8s)
+→ timeupdate detects inEndTrim at 8s
+→ Captures wasPlaying=true, sets resumePlaybackRef=true
+→ Auto-advances to Clip B at trimStart (11s on timeline, 1s in video)
+→ Loads Clip B, sees resumePlaybackRef=true → auto-plays
+→ Plays 11s-17s timeline (1s-7s video, stops at trimEnd: 10s - 3s = 7s)
+→ Auto-advances to Clip C at 20s
+→ Plays 20s-30s (entire Clip C, no trims)
+→ Reaches end → video.pause() → button shows "play"
+
+User drags Clip B end trim from 3s to 5s WHILE playing at 16s timeline (6s video):
+→ timeupdate fires, detects 6s >= (10s - 5s) → inEndTrim=true
+→ Immediately jumps to Clip C at 20s (trimStart)
+→ Continues playing seamlessly (button stays "pause")
+→ No gap, no pause, no confusion
+```
+
+**Bug fixes applied**:
+- ✅ Fixed: Pausing after trim jump (now preserves playing state with `wasPlaying`)
+- ✅ Fixed: Wrong jump position during playback (check trim BEFORE playhead update)
+- ✅ Fixed: Play button not updating (driven by video events: play/pause/ended)
+
+### 4.4 Test Scenarios (Verification Checklist)
+
+**Test 1: Trim while paused, then play**
+1. Load 2 clips into timeline
+2. Pause at 3s of first clip
+3. Drag end trim of first clip to 2s (playhead now in trimmed region)
+4. Press play
+- ✅ Expected: Immediately jumps to start of second clip and plays (no pause)
+- ❌ Bug: Would pause at second clip instead of playing
+
+**Test 2: Trim while playing**
+1. Load 2 clips (each 10s) into timeline
+2. Play from beginning
+3. When playhead at 6s of first clip, drag end trim to 5s
+4. Video should immediately jump to 10s timeline (start of second clip)
+- ✅ Expected: Jumps to second clip start (10s), continues playing smoothly
+- ❌ Bug: Would jump to wrong position or get stuck in loop
+
+**Test 3: Multi-clip continuous playback**
+1. Load 3 clips into timeline
+2. Press play from beginning
+3. Watch playback progress through all clips
+- ✅ Expected: Plays clip 1 → auto-advances → plays clip 2 → auto-advances → plays clip 3 → pauses
+- ❌ Bug: Would pause between clips
+
+**Test 4: Button state at end of timeline**
+1. Load clips, play through to end
+2. Observe button when playhead reaches end
+- ✅ Expected: Button changes to "play" icon
+- ❌ Bug: Button stuck showing "pause"
+
+**Test 5: Smooth playhead movement**
+1. Load clips, press play
+2. Observe playhead visual movement
+- ✅ Expected: Smooth 60fps progression (requestAnimationFrame)
+- ❌ Bug: Jumpy/choppy movement (only timeupdate events)
+
+**Test 6: Press play from trimmed region**
+1. Load clip with end trim of 3s
+2. Click timeline at 8s (within trim region)
+3. Press play
+- ✅ Expected: Jumps to next clip start and plays (or stays paused if no next clip)
+- ❌ Bug: Plays trimmed section or does nothing
+
+**Test 7: Click different clip during playback**
+1. Load 2 clips (each 10s) into timeline
+2. Play from beginning (playhead in clip 1 at 3s)
+3. Click timeline at 15s (5s into clip 2)
+4. Observe where video seeks to
+- ✅ Expected: Jumps to exactly 5s into clip 2, continues playing
+- ❌ Bug: Jumps to wrong position in clip 2 (RAF corrupted playheadPosition)
+
+**Test 8: Restart from end**
+1. Load clips, play through to end
+2. Observe button state when playback stops
+3. Click play button
+- ✅ Expected: Button shows "play" at end, clicking restarts from beginning
+- ❌ Bug: Button stuck as "pause", or clicking play does nothing
+
+**Test 9: Playhead stops exactly at trim boundaries**
+1. Load clip with end trim set (e.g., trim 2s from 10s clip)
+2. Play clip and watch playhead reach end trim
+3. Observe exact position where playhead stops
+- ✅ Expected: Playhead stops exactly at trim handle position (8s), not past it
+- ❌ Bug: Playhead overshoots past trim boundary visually (appears at 8.1s or beyond)
+
+**Test 10: Button state with multiple clips at end**
+1. Load 2 clips into timeline (no trims)
+2. Play from beginning through both clips to end
+3. Observe play/pause button state when playback stops
+4. Click play button
+- ✅ Expected: Button shows "play" when stopped at end, clicking restarts from beginning
+- ❌ Bug: Button stuck showing "pause" at end (external sync interference)
+
+### 5. Video Player Simplification
+
+- **No scrubber** - Timeline is the scrubber
+- **Display only**: `playheadPosition / totalOriginalDuration` (e.g., `5:30 / 18:00`)
+- **Frame display**: Always shows frame at playhead position
+  - Playhead at 3.5s → video shows frame at 3.5s
+  - Even if 3.5s is in trimmed region, that frame is visible (just won't play through it)
+  - Perfect sync: playhead position = video frame position
+- **Session storage**: Only media metadata and timeline clip configuration (position, trims, track info) persist between launches; playhead state is always reset to the first segment’s `trimStart` when the app starts
+
+### 6. Implementation Checklist
+
+- [x] Timeline store uses `originalDuration` for `startTime` calculations
+- [x] `addClipToTimeline`: position = sum of previous clips' `originalDuration`
+- [x] `updateClipTrim`: only updates `trimStart`, `trimEnd`, `duration` - never touches `startTime`
+- [x] `removeClipFromTimeline`: recalculates positions using `originalDuration`
+- [x] Playback timeupdate: checks if playhead in trimmed region each frame
+- [x] Auto-skip logic: jumps playhead to next non-trimmed section
+- [x] Trim handle drag: immediately updates store, playback responds in real-time
+- [x] Timeline click: can position playhead anywhere (including trimmed regions)
+- [ ] Export: only includes non-trimmed segments in output (already working, verify)
+
+### Rationale
+
+- **Predictable**: Clip positions never change, making timeline stable
+- **Real-time**: Trim changes instantly affect playback without recalculation
+- **Simple mental model**: Timeline = full sequence, trims = skip markers
+- **Eliminates edge cases**: No need to handle clip repositioning on every trim change
+- **Matches user expectations**: Like Loom - trim doesn't move clips around
 
 ---
 

@@ -11,6 +11,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getVideoThumbnail: (filePath: string, timestamp?: number) => ipcRenderer.invoke(IPC_CHANNELS.VIDEO_THUMBNAIL, filePath, timestamp),
   exportVideo: (options: any) => ipcRenderer.invoke(IPC_CHANNELS.VIDEO_EXPORT, options),
   exportMultipleClips: (options: any) => ipcRenderer.invoke(IPC_CHANNELS.VIDEO_EXPORT_MULTIPLE, options),
+  exportMultiTrack: (options: any) => ipcRenderer.invoke(IPC_CHANNELS.VIDEO_EXPORT_MULTITRACK, options),
+  
+  // Recording operations
+  getRecordingSources: () => ipcRenderer.invoke(IPC_CHANNELS.RECORDING_GET_SOURCES),
+  saveRecordingFile: (arrayBuffer: ArrayBuffer, fileName: string) => ipcRenderer.invoke(IPC_CHANNELS.RECORDING_SAVE_FILE, arrayBuffer, fileName),
   
   // Generic IPC (for future use)
   sendMessage: (channel: string, data: any) => {
@@ -32,6 +37,9 @@ export interface ElectronAPI {
   getVideoThumbnail: (filePath: string, timestamp?: number) => Promise<{ success: boolean; data?: string; error?: string }>;
   exportVideo: (options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
   exportMultipleClips: (options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+  exportMultiTrack: (options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+  getRecordingSources: () => Promise<any[]>;
+  saveRecordingFile: (arrayBuffer: ArrayBuffer, fileName: string) => Promise<{ success: boolean; filePath?: string; error?: string }>;
   sendMessage: (channel: string, data: any) => void;
   onMessage: (channel: string, callback: (...args: any[]) => void) => void;
   invoke: (channel: string, ...args: any[]) => Promise<any>;

@@ -16,5 +16,10 @@ export const IPC_CHANNELS = {
   // Video export
   VIDEO_EXPORT: 'video:export',
   VIDEO_EXPORT_MULTIPLE: 'video:export-multiple',
+  VIDEO_EXPORT_MULTITRACK: 'video:export-multitrack',
+  
+  // Recording operations
+  RECORDING_GET_SOURCES: 'recording:get-sources',
+  RECORDING_SAVE_FILE: 'recording:save-file',
 };
 

@@ -29,6 +29,17 @@
   transform: scale(1.05);
 }
 
+.timeDisplay {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
 .timeline {
   flex: 1;
   display: flex;
@@ -73,6 +84,14 @@
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
+  position: relative;
+}
+
+/* WebKit (Chrome, Safari, Edge) */
+.seekBar::-webkit-slider-track {
+  height: 4px;
+  border-radius: 2px;
+  background: transparent; /* Use inline gradient instead */
 }
 
 .seekBar::-webkit-slider-thumb {
@@ -84,6 +103,14 @@
   background: #fff;
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  margin-top: -5px; /* Center thumb on track (14px thumb - 4px track = 10px / 2) */
+}
+
+/* Firefox */
+.seekBar::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: transparent; /* Use inline gradient instead */
 }
 
 .seekBar::-moz-range-thumb {

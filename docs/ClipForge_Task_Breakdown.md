@@ -19,6 +19,7 @@
 - **PR-05**: Trim Functionality (In-Out Points) ✅ (2025-10-29)
 - **PR-06**: Single-Clip & Multi-Clip Export with FFmpeg ✅ (2025-10-29)
 - **PR-07**: Production Build & MVP Polish ✅ (2025-10-29)
+- **Playback Simplification**: Loom-style continuous playback refactor (trim skips, non-persisted playhead) ✅ (2025-10-30)
 
 ### 🎉 MVP COMPLETE - READY FOR SUBMISSION!
 - All MVP features implemented and tested ✅
@@ -34,6 +35,7 @@
 - ✅ Video preview player with playback controls
 - ✅ Play/pause, seek, and timeline scrubbing
 - ✅ Zustand state management with localStorage persistence
+- ✅ Playhead resets to first segment on launch; playback skips trimmed regions seamlessly
 - ✅ Timeline trimming keeps preview scrubber aligned with combined clip timing
 - ✅ Single-clip export with trim support
 - ✅ Multi-clip export with concatenation and graceful audio handling

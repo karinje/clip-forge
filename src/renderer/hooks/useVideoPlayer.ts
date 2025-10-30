@@ -27,16 +27,20 @@ export function useVideoPlayer() {
 
   const seek = (time: number) => {
     if (videoRef.current) {
+      console.log('🎯 Seeking to:', time, 'readyState:', videoRef.current.readyState);
       // Ensure video is loaded enough to seek
       if (videoRef.current.readyState >= 2) {
         videoRef.current.currentTime = time;
         setCurrentTime(time);
+        console.log('✅ Seeked to:', time);
       } else {
+        console.log('⏳ Waiting for video to be ready...');
         // Wait for video to be ready, then seek
         const handleCanPlay = () => {
           if (videoRef.current) {
             videoRef.current.currentTime = time;
             setCurrentTime(time);
+            console.log('✅ Seeked to:', time, '(after canplay)');
             videoRef.current.removeEventListener('canplay', handleCanPlay);
           }
         };
@@ -66,9 +70,18 @@ export function useVideoPlayer() {
       setCurrentTime(0);
     };
     
-    const handleEnded = () => setIsPlaying(false);
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => {
+      console.log('🎬 Video ended event');
+      setIsPlaying(false);
+    };
+    const handlePlay = () => {
+      console.log('▶️ Video play event');
+      setIsPlaying(true);
+    };
+    const handlePause = () => {
+      console.log('⏸️ Video pause event');
+      setIsPlaying(false);
+    };
 
     // Listen to all events
     video.addEventListener('timeupdate', handleTimeUpdate);

@@ -3,6 +3,7 @@ import { MediaLibrary } from './components/MediaLibrary/MediaLibrary';
 import { PreviewPlayer } from './components/PreviewPlayer/PreviewPlayer';
 import { Timeline } from './components/Timeline/Timeline';
 import { ExportDialog } from './components/ExportDialog/ExportDialog';
+import { RecordingPanel } from './components/RecordingPanel/RecordingPanel';
 import { useVideoExport } from './hooks/useVideoExport';
 import './styles/index.css';
 
@@ -35,6 +36,7 @@ export const App: React.FC = () => {
       <header className="app-header">
         <div className="app-logo">ClipForge</div>
         <div className="header-spacer"></div>
+        <RecordingPanel />
         <button 
           className="header-button" 
           onClick={handleReset}

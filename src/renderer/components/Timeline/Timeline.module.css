@@ -144,7 +144,95 @@
   position: relative;
   height: 90px;
   border-bottom: 1px solid var(--color-border);
-  padding: 12px 0;
+  padding: 12px 0 12px 8px; /* Minimal left padding */
+}
+
+.overlayTrack {
+  background: rgba(100, 100, 255, 0.05);
+}
+
+.trackHeader {
+  position: absolute;
+  left: 8px;
+  top: 12px;
+  width: auto;
+  max-width: 150px;
+  padding: 4px 8px;
+  background: rgba(37, 37, 38, 0.9);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.trackName {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.trackControls {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.muteButton,
+.removeTrackButton {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  border-radius: 3px;
+  font-size: 12px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.muteButton:hover,
+.removeTrackButton:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-accent);
+}
+
+.muteButton.muted {
+  background: rgba(255, 59, 48, 0.15);
+  border-color: rgba(255, 59, 48, 0.4);
+}
+
+.removeTrackButton {
+  font-size: 18px;
+  color: rgba(255, 59, 48, 0.8);
+}
+
+.addTrackButton {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addTrackButton:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
 }
 
 .playhead {
@@ -182,5 +270,16 @@
   margin: 12px;
   border-radius: var(--radius-md);
   background: var(--color-bg-secondary);
+}
+
+.emptyTrack {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  opacity: 0.5;
+  pointer-events: none;
 }
 

@@ -13,7 +13,13 @@ export interface ExportSettings {
   format: 'mp4' | 'webm' | 'mov';
   quality: 'high' | 'medium' | 'low';
   outputPath: string;
+  pipConfig?: {
+    position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    scale: number;
+  };
 }
+
+import { useTimelineStore } from '../../store/timelineStore';
 
 export const ExportDialog: React.FC<Props> = ({
   onClose,
@@ -26,6 +32,13 @@ export const ExportDialog: React.FC<Props> = ({
   const [quality, setQuality] = useState<'high' | 'medium' | 'low'>('high');
   const [outputPath, setOutputPath] = useState('');
   const [exportSuccess, setExportSuccess] = useState(false);
+  const [pipPosition, setPipPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('bottom-right');
+  const [pipScale, setPipScale] = useState(0.25);
+  
+  const { tracks, clips } = useTimelineStore();
+  const hasMultipleTracks = tracks.length > 1 && tracks.some(t => 
+    clips.filter(c => c.trackId === t.id).length > 0
+  );
   
   const handleExport = () => {
     if (!outputPath || isExporting) return;
@@ -35,6 +48,10 @@ export const ExportDialog: React.FC<Props> = ({
       format,
       quality,
       outputPath,
+      pipConfig: hasMultipleTracks ? {
+        position: pipPosition,
+        scale: pipScale,
+      } : undefined,
     });
   };
   
@@ -171,6 +188,39 @@ export const ExportDialog: React.FC<Props> = ({
               </div>
             </div>
           </div>
+          
+          {hasMultipleTracks && (
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>Picture-in-Picture Settings</div>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Overlay Position</label>
+                <select 
+                  className={styles.select}
+                  value={pipPosition}
+                  onChange={(e) => setPipPosition(e.target.value as any)}
+                  disabled={isExporting}
+                >
+                  <option value="top-left">Top Left</option>
+                  <option value="top-right">Top Right</option>
+                  <option value="bottom-left">Bottom Left</option>
+                  <option value="bottom-right">Bottom Right</option>
+                </select>
+              </div>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Overlay Size: {Math.round(pipScale * 100)}%</label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="0.5"
+                  step="0.05"
+                  value={pipScale}
+                  onChange={(e) => setPipScale(parseFloat(e.target.value))}
+                  disabled={isExporting}
+                  className={styles.slider}
+                />
+              </div>
+            </div>
+          )}
           
           {isExporting && (
             <div className={styles.progress}>
