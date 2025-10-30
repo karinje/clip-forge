@@ -1,4 +1,6 @@
 import React from 'react';
+import { formatTime } from '../../utils/timeFormatters';
+import { useTimelineStore } from '../../store/timelineStore';
 import styles from './PlaybackControls.module.css';
 
 interface Props {
@@ -18,11 +20,12 @@ export const PlaybackControls: React.FC<Props> = ({
   onPlayPause,
   onVolumeChange,
 }) => {
-  const formatTime = (seconds: number) => {
-    if (!isFinite(seconds)) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const showCentiseconds = useTimelineStore(state => state.showCentiseconds);
+  
+  // Safe wrapper for formatTime to handle edge cases
+  const safeFormatTime = (seconds: number) => {
+    if (!isFinite(seconds)) return showCentiseconds ? '0:00.00' : '0:00';
+    return formatTime(seconds, showCentiseconds);
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +40,7 @@ export const PlaybackControls: React.FC<Props> = ({
       </button>
 
       <div className={styles.timeDisplay}>
-        {formatTime(currentTime)} / {formatTime(duration)}
+        {safeFormatTime(currentTime)} / {safeFormatTime(duration)}
       </div>
 
       <div className={styles.volumeContainer}>

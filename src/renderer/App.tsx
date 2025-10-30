@@ -4,11 +4,14 @@ import { PreviewPlayer } from './components/PreviewPlayer/PreviewPlayer';
 import { Timeline } from './components/Timeline/Timeline';
 import { ExportDialog } from './components/ExportDialog/ExportDialog';
 import { RecordingPanel } from './components/RecordingPanel/RecordingPanel';
+import { ShortcutHelpModal } from './components/ShortcutHelpModal/ShortcutHelpModal';
+import { StatusBar } from './components/StatusBar/StatusBar';
 import { useVideoExport } from './hooks/useVideoExport';
 import './styles/index.css';
 
 export const App: React.FC = () => {
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [previewHeight, setPreviewHeight] = useState(400);
@@ -35,12 +38,27 @@ export const App: React.FC = () => {
       document.body.style.userSelect = '';
     };
     
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + ? to show keyboard shortcuts help
+      if ((e.metaKey || e.ctrlKey) && (e.key === '?' || e.key === '/')) {
+        e.preventDefault();
+        setShowShortcutHelp(true);
+      }
+      // Cmd/Ctrl + E to open export dialog
+      else if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+        e.preventDefault();
+        setShowExportDialog(true);
+      }
+    };
+    
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('keydown', handleKeyDown);
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
   
@@ -129,9 +147,15 @@ export const App: React.FC = () => {
             onMouseDown={startPreviewResize}
             title="Drag to resize preview"
           />
-          <Timeline onExportClick={handleExportClick} playPauseHandler={playPauseHandlerRef} />
+          <Timeline 
+            onExportClick={handleExportClick} 
+            onShowShortcuts={() => setShowShortcutHelp(true)}
+            playPauseHandler={playPauseHandlerRef} 
+          />
         </div>
       </div>
+      
+      <StatusBar />
       
       {showExportDialog && (
         <ExportDialog
@@ -141,6 +165,10 @@ export const App: React.FC = () => {
           progress={progress}
           error={error}
         />
+      )}
+      
+      {showShortcutHelp && (
+        <ShortcutHelpModal onClose={() => setShowShortcutHelp(false)} />
       )}
     </div>
   );

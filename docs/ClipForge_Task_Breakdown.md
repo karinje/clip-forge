@@ -119,12 +119,13 @@
 - ✅ Horizontal scrollbar when zoomed (PR-14)
 
 **Advanced Editing & UI Polish (October 30)**
-- ✅ I/O point selection (I key for IN, O key for OUT)
-- ✅ Yellow selection overlay with IN/OUT markers
-- ✅ Delete selected region (Delete key when I/O points set)
-- ✅ Escape key to clear selection
+- ✅ Shift+Arrow selection (hold Shift, press ← → to extend by 0.1s)
+- ✅ Yellow selection overlay (no labels, cleaner UI)
+- ✅ Delete selected region (Delete key when selection set)
+- ✅ Escape key to clear selection and anchor
 - ✅ Space bar for play/pause
-- ✅ Playhead arrow fully visible (proper z-index & padding)
+- ✅ Playhead positioned correctly (starts at 28px, spans all tracks +16px)
+- ✅ Playhead arrow at top of tracks (no overlap with ruler)
 - ✅ Increased track height (110px) for easier clicking
 - ✅ Clips vertically centered in tracks
 - ✅ Modern blue trim handles (rounded, 12px/16px)
@@ -136,6 +137,8 @@
 - ✅ Track mute/unmute buttons
 - ✅ Track solo functionality (S button)
 - ✅ Modern SVG icons throughout UI
+- ✅ Shortcuts button in timeline toolbar (opens help modal)
+- ✅ Removed X delete button from clips (use Delete key instead)
 
 **PR-15: Core Feature Completion (October 30)**
 - ✅ Thumbnail previews in media library (100x56px, FFmpeg extraction)
@@ -149,16 +152,15 @@
 
 **Keyboard Shortcuts Implemented**
 - ✅ `Space` - Play/pause
-- ✅ `Delete`/`Backspace` - Remove selected clip (or delete I/O selection)
+- ✅ `Delete`/`Backspace` - Remove selected clip (or delete selection)
 - ✅ `Shift+Delete` - Delete trimmed region, keep segments
 - ✅ `Cmd/Ctrl+K` - Split clip at playhead
 - ✅ `Cmd/Ctrl+D` - Duplicate clip
 - ✅ `Cmd/Ctrl+Shift+S` - Toggle snap to grid/clips
 - ✅ `Cmd/Ctrl+E` - Open export dialog
 - ✅ `Cmd/Ctrl+?` - Show keyboard shortcuts help
-- ✅ `I` - Set IN point
-- ✅ `O` - Set OUT point
-- ✅ `Escape` - Clear IN/OUT selection
+- ✅ `Shift+← →` - Extend selection by 0.1s (hold Shift, press arrows)
+- ✅ `Escape` - Clear selection and anchor
 - ✅ `J` - Rewind 5 seconds
 - ✅ `L` - Fast forward 5 seconds
 - ✅ `[` - Jump to previous clip edge
@@ -2328,14 +2330,15 @@ clipforge/
 **Status**: ✅ **COMPLETED** (2025-10-30)
 
 **Additional Implementations**:
-- ✅ I/O Point Selection (Professional editor-style region marking)
-  - Press `I` to set IN point at playhead
-  - Press `O` to set OUT point at playhead
-  - Yellow overlay shows selected region
-  - Press `Delete` to remove selected region
-  - Press `Escape` to clear selection
+- ✅ Shift+Arrow Selection (Intuitive region marking)
+  - Hold `Shift` and press `← →` to extend selection by 0.1s
+  - Selection anchor set automatically on first Shift+Arrow press
+  - Yellow overlay shows selected region (no labels, cleaner UI)
+  - Press `Delete` to remove selected region and create split clips
+  - Press `Escape` to clear selection and anchor
 - ✅ Timeline UI Polish
-  - Playhead arrow fully visible with proper z-index and padding
+  - Playhead positioned correctly (28px top, spans all tracks +16px)
+  - Playhead arrow at top of tracks (no overlap with ruler)
   - Clips vertically centered in tracks (110px height)
   - Equal spacing above/below clips for easier clicking
   - Collapsible sidebar for media library
@@ -2343,6 +2346,8 @@ clipforge/
   - Modern blue trim handles (12px/16px with rounded edges)
   - Tooltips on all interactive buttons
   - Custom scrollbars matching dark theme
+  - Shortcuts button in timeline toolbar (opens help modal)
+  - Removed X delete button from clips (keyboard-first workflow)
 
 ---
 

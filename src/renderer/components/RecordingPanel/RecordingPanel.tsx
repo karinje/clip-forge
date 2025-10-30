@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useProjectStore } from '../../store/projectStore';
 import { useTimelineStore } from '../../store/timelineStore';
+import { formatTime } from '../../utils/timeFormatters';
 import styles from './RecordingPanel.module.css';
 
 interface RecordingSource {
@@ -28,6 +29,7 @@ export const RecordingPanel: React.FC = () => {
   
   const addClip = useProjectStore(state => state.addClip);
   const addClipToTimeline = useTimelineStore(state => state.addClipToTimeline);
+  const showCentiseconds = useTimelineStore(state => state.showCentiseconds);
   
   // Load sources when panel opens for screen recording
   useEffect(() => {
@@ -315,12 +317,6 @@ export const RecordingPanel: React.FC = () => {
     }
   };
   
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-  
   return (
     <>
       <button
@@ -391,7 +387,7 @@ export const RecordingPanel: React.FC = () => {
                 <video ref={videoPreviewRef} autoPlay muted className={styles.videoPreview} />
                 <div className={styles.recordingIndicator}>
                   <span className={styles.recordingDot}>●</span>
-                  Recording: {formatTime(recordingTime)}
+                  Recording: {formatTime(recordingTime, showCentiseconds)}
                 </div>
               </div>
             )}

@@ -93,6 +93,35 @@
   border-color: var(--color-accent);
 }
 
+.snapButton {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.15s ease;
+  opacity: 0.6;
+}
+
+.snapButton:hover {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-accent);
+  opacity: 1;
+}
+
+.snapButton.snapActive {
+  background: rgba(52, 199, 89, 0.15);
+  border-color: rgba(52, 199, 89, 0.4);
+  color: rgba(52, 199, 89, 1);
+  opacity: 1;
+}
+
 .resetButton {
   width: 28px;
   height: 28px;
@@ -133,6 +162,31 @@
 .exportButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.shortcutsButton {
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shortcutsButton:hover {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.shortcutsButton svg {
+  flex-shrink: 0;
 }
 
 .timelineContent {
@@ -216,7 +270,7 @@
   height: 110px;
   border-bottom: 1px solid var(--color-border);
   padding: 25px 0 25px 8px;
-  overflow: visible;
+  overflow: visible; /* Keep visible for clip content */
   display: flex;
   align-items: center;
 }
@@ -232,16 +286,17 @@
   width: auto;
   max-width: 180px;
   padding: 4px 8px;
-  background: rgba(20, 20, 20, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 30, 30, 0.98);  /* Much more opaque - was 0.85 */
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  z-index: 5;
+  z-index: 10;  /* Higher z-index - was 5 */
   pointer-events: auto;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);  /* Stronger blur */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);  /* Add shadow for depth */
 }
 
 .trackName {
@@ -251,6 +306,10 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .trackControls {
@@ -258,8 +317,10 @@
   gap: 4px;
   align-items: center;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
+.soloButton,
 .muteButton,
 .removeTrackButton {
   background: rgba(30, 30, 30, 0.8);
@@ -274,12 +335,27 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  pointer-events: auto;
+  position: relative;
+  z-index: 15;
 }
 
+.soloButton {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.soloButton:hover,
 .muteButton:hover,
 .removeTrackButton:hover {
   background: var(--color-bg-tertiary);
   border-color: var(--color-border-hover);
+}
+
+.soloButton.solo {
+  background: rgba(52, 199, 89, 0.15);
+  border-color: rgba(52, 199, 89, 0.4);
+  color: rgba(52, 199, 89, 1);
 }
 
 .muteButton.muted {
@@ -351,8 +427,8 @@
 
 .playhead {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 28px; /* Start after the ruler */
+  /* Height set dynamically via inline style */
   width: 2px;
   background: #ff3b30;
   z-index: 100;
@@ -362,7 +438,7 @@
 .playhead::before {
   content: '';
   position: absolute;
-  top: -16px;
+  top: 0; /* Position at top of playhead (which starts after ruler) */
   left: -9px;
   width: 0;
   height: 0;

@@ -10,6 +10,7 @@ export const useVideoExport = () => {
   
   const clips = useTimelineStore(state => state.clips);
   const tracks = useTimelineStore(state => state.tracks);
+  const soloTrackId = useTimelineStore(state => state.soloTrackId);
   const mediaClips = useProjectStore(state => state.clips);
   
   // Listen for progress updates from main process
@@ -40,9 +41,14 @@ export const useVideoExport = () => {
         // Multi-track export with PiP
         const trackData = tracks.map(track => {
           const trackClips = clips.filter(c => c.trackId === track.id);
+          // Handle solo: if any track is solo'd, mute all others
+          const effectiveMuted = soloTrackId !== null 
+            ? soloTrackId !== track.id  // Mute this track if it's not the solo'd one
+            : track.muted;               // Otherwise use track's mute state
+          
           return {
             type: track.type,
-            muted: track.muted,
+            muted: effectiveMuted,
             clips: trackClips.map(clip => {
               const mediaClip = mediaClips.find(mc => mc.id === clip.mediaClipId);
               if (!mediaClip) {

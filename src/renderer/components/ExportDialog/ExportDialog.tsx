@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatTime } from '../../utils/timeFormatters';
 import styles from './ExportDialog.module.css';
 
 interface Props {
@@ -20,6 +21,7 @@ export interface ExportSettings {
 }
 
 import { useTimelineStore } from '../../store/timelineStore';
+import { useProjectStore } from '../../store/projectStore';
 
 export const ExportDialog: React.FC<Props> = ({
   onClose,
@@ -35,10 +37,14 @@ export const ExportDialog: React.FC<Props> = ({
   const [pipPosition, setPipPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('bottom-right');
   const [pipScale, setPipScale] = useState(0.25);
   
-  const { tracks, clips } = useTimelineStore();
+  const { tracks, clips: timelineClips, showCentiseconds } = useTimelineStore();
+  const mediaClips = useProjectStore(state => state.clips);
   const hasMultipleTracks = tracks.length > 1 && tracks.some(t => 
-    clips.filter(c => c.trackId === t.id).length > 0
+    timelineClips.filter(c => c.trackId === t.id).length > 0
   );
+  
+  // Calculate total export duration
+  const totalDuration = timelineClips.reduce((sum, clip) => sum + clip.duration, 0);
   
   const handleExport = () => {
     if (!outputPath || isExporting) return;
@@ -80,6 +86,39 @@ export const ExportDialog: React.FC<Props> = ({
         </div>
         
         <div className={styles.content}>
+          {/* Export Preview Section */}
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>Export Preview</div>
+            <div className={styles.previewInfo}>
+              <div className={styles.previewStat}>
+                <span className={styles.previewLabel}>Total Clips:</span>
+                <span className={styles.previewValue}>{timelineClips.length}</span>
+              </div>
+              <div className={styles.previewStat}>
+                <span className={styles.previewLabel}>Total Duration:</span>
+                <span className={styles.previewValue}>{formatTime(totalDuration, showCentiseconds)}</span>
+              </div>
+              {hasMultipleTracks && (
+                <div className={styles.previewStat}>
+                  <span className={styles.previewLabel}>Tracks:</span>
+                  <span className={styles.previewValue}>{tracks.length} (PiP enabled)</span>
+                </div>
+              )}
+            </div>
+            <div className={styles.clipList}>
+              {timelineClips.map((clip, idx) => {
+                const mediaClip = mediaClips.find(mc => mc.id === clip.mediaClipId);
+                return (
+                  <div key={clip.id} className={styles.clipPreviewItem}>
+                    <span className={styles.clipIndex}>{idx + 1}.</span>
+                    <span className={styles.clipName}>{mediaClip?.name || 'Unknown'}</span>
+                    <span className={styles.clipDuration}>{formatTime(clip.duration, showCentiseconds)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          
           <div className={styles.section}>
             <div className={styles.sectionTitle}>Format</div>
             <div className={styles.radioGroup}>

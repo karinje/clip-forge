@@ -3,6 +3,12 @@
   flex-direction: column;
   height: 100%;
   background: var(--color-bg-secondary);
+  transition: background-color 0.2s ease;
+}
+
+.mediaLibrary.draggingOver {
+  background: rgba(14, 99, 156, 0.1);
+  border: 2px dashed var(--color-accent);
 }
 
 .header {

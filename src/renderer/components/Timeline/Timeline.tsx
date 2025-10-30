@@ -2,14 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTimelineStore } from '../../store/timelineStore';
 import { useProjectStore } from '../../store/projectStore';
 import { TimelineClip } from './TimelineClip';
+import { formatTime } from '../../utils/timeFormatters';
 import styles from './Timeline.module.css';
 
 interface Props {
   onExportClick: () => void;
+  onShowShortcuts?: () => void;
   playPauseHandler?: React.MutableRefObject<(() => void) | null>;
 }
 
-export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) => {
+export const Timeline: React.FC<Props> = ({ onExportClick, onShowShortcuts, playPauseHandler }) => {
   const { 
     clips, 
     tracks, 
@@ -27,6 +29,12 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
     addTrack,
     removeTrack,
     toggleTrackMute,
+    toggleTrackSolo,
+    soloTrackId,
+    snapEnabled,
+    toggleSnap,
+    showCentiseconds,
+    toggleShowCentiseconds,
     selectedTimelineClipId: storeSelectedClipId,
     selectionInPoint,
     selectionOutPoint,
@@ -40,6 +48,18 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
   
   const [isDragOver, setIsDragOver] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Log snap status on mount
+  useEffect(() => {
+    console.log('🎬 Timeline initialized');
+    console.log('🧲 Snap status:', snapEnabled ? 'ENABLED ✅' : 'DISABLED ❌');
+    console.log('📏 Snap tolerance:', useTimelineStore.getState().snapTolerance, 'seconds');
+  }, []);
+  
+  // Log snap status changes
+  useEffect(() => {
+    console.log('🔄 Snap status changed:', snapEnabled ? 'ENABLED ✅' : 'DISABLED ❌');
+  }, [snapEnabled]);
   
   // Ensure we always have at least one track
   useEffect(() => {
@@ -55,12 +75,6 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
   
   // Use zoom from store for interactive zoom controls
   const totalWidth = Math.max(maxDuration * zoom, scrollContainerRef.current?.clientWidth || 800);
-  
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
   
   // Generate ~5 evenly spaced tick marks
   const generateTicks = () => {
@@ -94,6 +108,9 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
     }
   };
 
+  // Track selection start anchor
+  const selectionAnchorRef = useRef<number | null>(null);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -111,28 +128,50 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
         return;
       }
       
-      // I key: Set In point at playhead
-      if (e.key === 'i' || e.key === 'I') {
+      // Shift+Arrow Left/Right: Create and extend selection
+      if (e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         e.preventDefault();
-        console.log('📍 Setting IN point at:', playheadPosition);
-        setSelectionInPoint(playheadPosition);
+        
+        // If no anchor, set it at current playhead position
+        if (selectionAnchorRef.current === null) {
+          selectionAnchorRef.current = playheadPosition;
+          console.log('⚓ Setting selection anchor at:', playheadPosition);
+        }
+        
+        // Move playhead left or right by 0.1 seconds per press
+        const step = 0.1;
+        let newPlayheadPosition = playheadPosition;
+        
+        if (e.key === 'ArrowLeft') {
+          newPlayheadPosition = Math.max(0, playheadPosition - step);
+          console.log('⬅️ Extending selection left to:', newPlayheadPosition);
+        } else {
+          newPlayheadPosition = Math.min(maxDuration, playheadPosition + step);
+          console.log('➡️ Extending selection right to:', newPlayheadPosition);
+        }
+        
+        setPlayheadPosition(newPlayheadPosition);
+        
+        // Update selection based on anchor and new playhead
+        const anchor = selectionAnchorRef.current;
+        if (newPlayheadPosition < anchor) {
+          setSelectionInPoint(newPlayheadPosition);
+          setSelectionOutPoint(anchor);
+        } else {
+          setSelectionInPoint(anchor);
+          setSelectionOutPoint(newPlayheadPosition);
+        }
+        
         return;
       }
       
-      // O key: Set Out point at playhead
-      if (e.key === 'o' || e.key === 'O') {
-        e.preventDefault();
-        console.log('📍 Setting OUT point at:', playheadPosition);
-        setSelectionOutPoint(playheadPosition);
-        return;
-      }
-      
-      // Escape key: Clear selection (IN/OUT points)
+      // Escape key: Clear selection and anchor
       if (e.key === 'Escape') {
-        if (selectionInPoint !== null || selectionOutPoint !== null) {
+        if (selectionInPoint !== null || selectionOutPoint !== null || selectionAnchorRef.current !== null) {
           e.preventDefault();
-          console.log('❌ Clearing selection');
+          console.log('❌ Clearing selection and anchor');
           clearSelection();
+          selectionAnchorRef.current = null;
         }
         return;
       }
@@ -144,6 +183,7 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
         if (selectionInPoint !== null && selectionOutPoint !== null) {
           console.log('🗑️ Deleting selected region');
           deleteSelectedRegion();
+          selectionAnchorRef.current = null; // Clear anchor after deletion
         } 
         // Otherwise, if there's a selected clip, delete it
         else if (storeSelectedClipId) {
@@ -167,12 +207,55 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
         e.preventDefault();
         console.log('📋 Duplicating clip');
         duplicateClip(storeSelectedClipId);
+      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's') {
+        // Toggle snap (Cmd/Ctrl+Shift+S)
+        e.preventDefault();
+        console.log('🧲 Toggling snap');
+        toggleSnap();
+      } else if (e.key === 'j' || e.key === 'J') {
+        // J key: Rewind 5 seconds
+        e.preventDefault();
+        const newPosition = Math.max(0, playheadPosition - 5);
+        console.log('⏪ Rewinding to:', newPosition);
+        setPlayheadPosition(newPosition);
+      } else if (e.key === 'l' || e.key === 'L') {
+        // L key: Fast forward 5 seconds
+        e.preventDefault();
+        const newPosition = Math.min(maxDuration, playheadPosition + 5);
+        console.log('⏩ Fast forwarding to:', newPosition);
+        setPlayheadPosition(newPosition);
+      } else if (e.key === '[') {
+        // [ key: Jump to previous clip edge
+        e.preventDefault();
+        const clipEdges = clips
+          .flatMap(c => [c.startTime, c.startTime + c.originalDuration])
+          .filter(edge => edge < playheadPosition)
+          .sort((a, b) => b - a); // Descending order
+        
+        if (clipEdges.length > 0) {
+          const prevEdge = clipEdges[0];
+          console.log('⬅️ Jumping to previous clip edge:', prevEdge);
+          setPlayheadPosition(prevEdge);
+        }
+      } else if (e.key === ']') {
+        // ] key: Jump to next clip edge
+        e.preventDefault();
+        const clipEdges = clips
+          .flatMap(c => [c.startTime, c.startTime + c.originalDuration])
+          .filter(edge => edge > playheadPosition)
+          .sort((a, b) => a - b); // Ascending order
+        
+        if (clipEdges.length > 0) {
+          const nextEdge = clipEdges[0];
+          console.log('➡️ Jumping to next clip edge:', nextEdge);
+          setPlayheadPosition(nextEdge);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [storeSelectedClipId, playheadPosition, selectionInPoint, selectionOutPoint, removeClipFromTimeline, splitClipAtPlayhead, duplicateClip, deleteTrimmedRegion, setSelectionInPoint, setSelectionOutPoint, deleteSelectedRegion, clearSelection, playPauseHandler]);
+  }, [storeSelectedClipId, playheadPosition, selectionInPoint, selectionOutPoint, removeClipFromTimeline, splitClipAtPlayhead, duplicateClip, deleteTrimmedRegion, setSelectionInPoint, setSelectionOutPoint, deleteSelectedRegion, clearSelection, playPauseHandler, toggleSnap, setPlayheadPosition, clips, maxDuration]);
   
   const handleDrop = (e: React.DragEvent, trackId?: string) => {
     e.preventDefault();
@@ -345,6 +428,20 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
             >
               +
             </button>
+            <button
+              className={`${styles.snapButton} ${snapEnabled ? styles.snapActive : ''}`}
+              onClick={toggleSnap}
+              title={`Snap to grid/clips: ${snapEnabled ? 'ON' : 'OFF'} (Cmd+Shift+S)`}
+            >
+              🧲
+            </button>
+            <button
+              className={`${styles.snapButton} ${showCentiseconds ? styles.snapActive : ''}`}
+              onClick={toggleShowCentiseconds}
+              title={`Time display: ${showCentiseconds ? 'MM:SS.CC' : 'MM:SS'}`}
+            >
+              .00
+            </button>
           </div>
           
           {tracks.length < 3 && (
@@ -369,10 +466,24 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
             className={styles.exportButton}
             onClick={onExportClick}
             disabled={clips.length === 0}
-            title="Export timeline to video file"
+            title="Export timeline to video file (Cmd+E)"
           >
             Export
           </button>
+          {onShowShortcuts && (
+            <button
+              className={styles.shortcutsButton}
+              onClick={onShowShortcuts}
+              title="Show keyboard shortcuts (Cmd+?)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 0a3 3 0 0 1 3-3m-3 3a3 3 0 0 0-3-3"/>
+                <path d="M21 12h-3.5M3 12h3.5M12 3v3.5M12 21v-3.5"/>
+                <circle cx="12" cy="12" r="10"/>
+              </svg>
+              <span>Shortcuts</span>
+            </button>
+          )}
         </div>
       </div>
       
@@ -390,7 +501,7 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
                   className={styles.tick}
                   style={{ left: `${tick * zoom}px` }}
                 >
-                  <span className={styles.tickLabel}>{formatTime(tick)}</span>
+                  <span className={styles.tickLabel}>{formatTime(tick, showCentiseconds)}</span>
                 </div>
               ))}
             </div>
@@ -412,11 +523,26 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
                     <span className={styles.trackName}>{track.name}</span>
                     <div className={styles.trackControls}>
                       <button
-                        className={`${styles.muteButton} ${track.muted ? styles.muted : ''}`}
-                        onClick={() => toggleTrackMute(track.id)}
+                        className={`${styles.soloButton} ${soloTrackId === track.id ? styles.solo : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          console.log('🔘 Solo button clicked for track:', track.id, 'Current solo:', soloTrackId);
+                          toggleTrackSolo(track.id);
+                        }}
+                        title={soloTrackId === track.id ? 'Un-solo track (mutes all others)' : 'Solo track (mutes all others)'}
+                      >
+                        S
+                      </button>
+                      <button
+                        className={`${styles.muteButton} ${track.muted || (soloTrackId !== null && soloTrackId !== track.id) ? styles.muted : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleTrackMute(track.id);
+                        }}
                         title={track.muted ? 'Unmute track' : 'Mute track'}
                       >
-                        {track.muted ? (
+                        {track.muted || (soloTrackId !== null && soloTrackId !== track.id) ? (
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6"/>
                           </svg>
@@ -452,7 +578,6 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
                         isSelected={clip.id === storeSelectedClipId}
                         onSelect={() => handleClipSelect(clip.id, clip.mediaClipId)}
                         onTrimUpdate={(trimStart, trimEnd) => updateClipTrim(clip.id, trimStart, trimEnd)}
-                        onDelete={() => removeClipFromTimeline(clip.id)}
                       />
                     ))
                   )}
@@ -468,37 +593,36 @@ export const Timeline: React.FC<Props> = ({ onExportClick, playPauseHandler }) =
                     />
                   )}
                   
-                  {/* In/Out point markers */}
+                  {/* In/Out point markers (no labels, just lines) */}
                   {selectionInPoint !== null && (
                     <div
                       className={styles.selectionMarker}
                       style={{ left: `${selectionInPoint * zoom}px` }}
                       title={`IN: ${selectionInPoint.toFixed(2)}s`}
-                    >
-                      <div className={styles.markerLabel}>IN</div>
-                    </div>
+                    />
                   )}
                   {selectionOutPoint !== null && (
                     <div
                       className={styles.selectionMarker}
                       style={{ left: `${selectionOutPoint * zoom}px` }}
                       title={`OUT: ${selectionOutPoint.toFixed(2)}s`}
-                    >
-                      <div className={styles.markerLabel}>OUT</div>
-                    </div>
-                  )}
-                  
-                  {/* Playhead - show on all tracks with clips */}
-                  {trackClips.length > 0 && (
-                    <div
-                      className={styles.playhead}
-                      style={{ left: `${playheadPosition * zoom}px` }}
                     />
                   )}
                 </div>
               );
             })}
           </div>
+          
+          {/* Playhead - single playhead for ALL tracks, positioned over entire timeline */}
+          {clips.length > 0 && (
+            <div
+              className={styles.playhead}
+              style={{ 
+                left: `${playheadPosition * zoom}px`,
+                height: `${tracks.reduce((sum, track) => sum + track.height, 0) + 16}px`
+              }}
+            />
+          )}
         </>
       </div>
     </div>

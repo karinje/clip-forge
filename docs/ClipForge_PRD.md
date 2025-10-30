@@ -953,32 +953,37 @@ User drags Clip B end trim from 3s to 5s WHILE playing at 16s timeline (6s video
 | Shortcut | Action |
 |----------|--------|
 | `Space` | Play/pause video (works globally) |
-| `Delete` or `Backspace` | Remove selected clip (or delete selected I/O region if set) |
+| `Delete` or `Backspace` | Remove selected clip (or delete selected region) |
 | `Shift+Delete` | Delete trimmed region, keep segments |
 | `Cmd/Ctrl+K` | Split clip at playhead |
 | `Cmd/Ctrl+D` | Duplicate selected clip |
-| `I` | Set IN point for selection at playhead |
-| `O` | Set OUT point for selection at playhead |
-| `Escape` | Clear IN/OUT selection points |
-| Zoom controls | Via toolbar buttons (no keyboard shortcuts) |
+| `Shift+← →` | Extend selection by 0.1s (hold Shift, press arrows) |
+| `Cmd/Ctrl+Shift+S` | Toggle snap to grid/clips |
+| `Cmd/Ctrl+E` | Open export dialog |
+| `Cmd/Ctrl+?` | Show keyboard shortcuts help |
+| `J` | Rewind 5 seconds |
+| `L` | Fast forward 5 seconds |
+| `[` | Jump to previous clip edge |
+| `]` | Jump to next clip edge |
+| `Escape` | Clear selection and anchor |
+| Zoom controls | Via toolbar buttons (−, ⊡, +) |
 
-### In/Out Point Selection & Deletion
+### Shift+Arrow Selection & Deletion
 
-**Behavior**: Professional editor-style region selection for precise deletion:
+**Behavior**: Intuitive region selection for precise editing:
 1. Position playhead where selection should start
-2. Press `I` to mark IN point (yellow marker appears)
-3. Move playhead to where selection should end
-4. Press `O` to mark OUT point (yellow marker appears)
-5. Yellow highlight shows selected region
-6. Press `Delete` to remove that region
+2. Hold `Shift` and press `←` or `→` to extend selection by 0.1s per press
+3. Selection anchor automatically set on first Shift+Arrow press
+4. Yellow highlight shows selected region (no labels, cleaner UI)
+5. Press `Delete` to remove that region and create split clips
 
 **Visual Indicators**:
-- Yellow overlay between IN and OUT points
-- Yellow vertical lines at marker positions
-- Labels showing "IN" and "OUT" at top of markers
+- Yellow overlay between selection boundaries
+- Yellow vertical lines at selection edges
+- No labels (cleaner interface)
 - Selected region deleted when Delete is pressed
 
-**Escape Behavior**: Press `Escape` to clear selection and abandon marking
+**Escape Behavior**: Press `Escape` to clear selection and anchor
 
 ### Technical Implementation Notes
 
@@ -1013,7 +1018,8 @@ User drags Clip B end trim from 3s to 5s WHILE playing at 16s timeline (6s video
 - Common in audio DAWs like Ableton, Pro Tools
 
 **Timeline UI Improvements**:
-- **Playhead Arrow Visibility**: Red triangle arrow positioned with proper z-index and padding to remain visible above all timeline elements
+- **Playhead Arrow Visibility**: Red triangle arrow positioned at 28px (after ruler) with proper z-index to remain visible above all timeline elements
+- **Playhead Positioning**: Starts at top: 28px, extends through all visible tracks (+16px margin), no overlap with ruler
 - **Vertically Centered Clips**: Clips centered in track with equal padding above and below for easier playhead positioning
 - **Increased Track Height**: Tracks expanded to 110px height (from 90px) to provide more clickable area
 - **Collapsible Sidebar**: Media library can be toggled to give more timeline space
@@ -1021,6 +1027,8 @@ User drags Clip B end trim from 3s to 5s WHILE playing at 16s timeline (6s video
 - **Modern Trim Handles**: Blue rounded handles (12px wide, 16px on hover) inside clips with white grip indicator
 - **Prominent Playhead**: Red line (2px) with large triangle arrow (16px tall) for clear position marking
 - **Tooltips on All Buttons**: Native browser tooltips via `title` attributes for all interactive elements
+- **Shortcuts Button**: Keyboard icon button in timeline toolbar to quickly access shortcuts help modal
+- **Cleaner Clip UI**: Removed X delete button from clips; use Delete key or toolbar button for keyboard-first workflow
 
 ---
 

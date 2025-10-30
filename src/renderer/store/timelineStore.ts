@@ -30,6 +30,10 @@ interface TimelineState {
   selectedTimelineClipId: string | null; // Currently selected timeline clip
   selectionInPoint: number | null; // In point for selection (seconds)
   selectionOutPoint: number | null; // Out point for selection (seconds)
+  soloTrackId: string | null; // ID of solo'd track (mutes all others)
+  snapEnabled: boolean; // Whether snap-to-grid/clip is enabled
+  snapTolerance: number; // Snap tolerance in seconds (default 0.5s)
+  showCentiseconds: boolean; // Whether to show centiseconds in time display
   
   // Actions
   addClipToTimeline: (mediaClipId: string, clipDuration: number, trackId?: string) => void;
@@ -49,6 +53,10 @@ interface TimelineState {
   addTrack: (type: 'main' | 'overlay') => void;
   removeTrack: (trackId: string) => void;
   toggleTrackMute: (trackId: string) => void;
+  toggleTrackSolo: (trackId: string) => void;
+  toggleSnap: () => void;
+  toggleShowCentiseconds: () => void;
+  getSnapPosition: (position: number, clipId?: string) => number;
 }
 
 let allowPersistence = true;
@@ -78,6 +86,10 @@ export const useTimelineStore = create<TimelineState>()(
       selectedTimelineClipId: null,
       selectionInPoint: null,
       selectionOutPoint: null,
+      soloTrackId: null,
+      snapEnabled: true, // Snap enabled by default
+      snapTolerance: 0.5, // 0.5 second snap tolerance
+      showCentiseconds: true, // Show centiseconds by default
       
       addClipToTimeline: (mediaClipId, clipDuration, trackId) => set((state) => {
         const targetTrackId = trackId || state.tracks[0].id;
@@ -443,6 +455,106 @@ export const useTimelineStore = create<TimelineState>()(
         );
         return { tracks: newTracks };
       }),
+      
+      toggleTrackSolo: (trackId) => set((state) => {
+        // If clicking the already solo'd track, un-solo it
+        if (state.soloTrackId === trackId) {
+          console.log('🔊 Un-soloing track:', trackId);
+          return { soloTrackId: null };
+        }
+        
+        // Otherwise, solo this track (mutes all others)
+        console.log('🎵 Soloing track:', trackId);
+        return { soloTrackId: trackId };
+      }),
+      
+      toggleSnap: () => set((state) => {
+        const newSnap = !state.snapEnabled;
+        console.log(newSnap ? '🧲 Snap enabled' : '🔓 Snap disabled');
+        return { snapEnabled: newSnap };
+      }),
+      
+      toggleShowCentiseconds: () => set((state) => {
+        const newValue = !state.showCentiseconds;
+        console.log(newValue ? '🕐 Centiseconds: SHOW' : '🕐 Centiseconds: HIDE');
+        return { showCentiseconds: newValue };
+      }),
+      
+      getSnapPosition: (position, clipId) => {
+        const state = get();
+        
+        console.log('🔍 getSnapPosition called:', {
+          position: position.toFixed(3),
+          clipId,
+          snapEnabled: state.snapEnabled
+        });
+        
+        if (!state.snapEnabled) {
+          console.log('❌ Snap is DISABLED, returning original position');
+          return position;
+        }
+        
+        const { clips, snapTolerance, playheadPosition, duration } = state;
+        
+        // Collect all snap points
+        const snapPoints: number[] = [];
+        
+        // 1. Add GRID snap points (every 1 second)
+        const gridInterval = 1.0; // 1 second grid
+        const maxTime = Math.max(duration, 60); // At least 60 seconds
+        for (let t = 0; t <= maxTime; t += gridInterval) {
+          snapPoints.push(t);
+        }
+        console.log(`📐 Added ${Math.floor(maxTime / gridInterval) + 1} grid points (every ${gridInterval}s)`);
+        
+        // 2. Add playhead position
+        snapPoints.push(playheadPosition);
+        
+        // 3. Add all clip edges (excluding the clip being edited)
+        clips.forEach(clip => {
+          if (clip.id !== clipId) {
+            snapPoints.push(clip.startTime); // Clip start
+            snapPoints.push(clip.startTime + clip.trimStart); // Playable start
+            snapPoints.push(clip.startTime + clip.originalDuration - clip.trimEnd); // Playable end
+            snapPoints.push(clip.startTime + clip.originalDuration); // Clip end
+          }
+        });
+        
+        console.log('📍 Total snap points:', snapPoints.length);
+        console.log('📏 Snap tolerance:', snapTolerance);
+        
+        // Find closest snap point
+        let closestPoint = position;
+        let minDistance = snapTolerance;
+        let snappedToPoint = null;
+        let snapType = '';
+        
+        snapPoints.forEach(point => {
+          const distance = Math.abs(position - point);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestPoint = point;
+            snappedToPoint = point;
+            
+            // Determine snap type for logging
+            if (point % 1.0 === 0) {
+              snapType = 'grid';
+            } else if (point === playheadPosition) {
+              snapType = 'playhead';
+            } else {
+              snapType = 'clip';
+            }
+          }
+        });
+        
+        if (snappedToPoint !== null) {
+          console.log(`✅ SNAPPED to ${snapType.toUpperCase()} from`, position.toFixed(3), 'to', closestPoint.toFixed(3), '(distance:', minDistance.toFixed(3), 's)');
+        } else {
+          console.log('⚪ NO SNAP (no point within tolerance)');
+        }
+        
+        return closestPoint;
+      },
       
       setSelectionInPoint: (position) => set({ selectionInPoint: position }),
       

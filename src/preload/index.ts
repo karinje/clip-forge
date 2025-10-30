@@ -1,7 +1,17 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import { IPC_CHANNELS } from '../shared/constants/channels';
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  // Get file path from File object (for drag-and-drop)
+  getFilePathFromFile: (file: File) => {
+    try {
+      return webUtils.getPathForFile(file);
+    } catch (err) {
+      console.error('Failed to get file path:', err);
+      return null;
+    }
+  },
+  
   // File operations
   openFile: () => ipcRenderer.invoke(IPC_CHANNELS.FILE_OPEN),
   saveFile: (defaultPath?: string) => ipcRenderer.invoke(IPC_CHANNELS.FILE_SAVE, defaultPath),
@@ -31,6 +41,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
 // Type definitions for window.electronAPI
 export interface ElectronAPI {
+  getFilePathFromFile: (file: File) => string | null;
   openFile: () => Promise<{ success: boolean; data: string[] }>;
   saveFile: (defaultPath?: string) => Promise<string | null>;
   getVideoMetadata: (filePath: string) => Promise<any>;

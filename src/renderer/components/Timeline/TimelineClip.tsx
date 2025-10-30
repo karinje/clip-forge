@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TimelineClip as TimelineClipType } from '../../store/timelineStore';
+import { TimelineClip as TimelineClipType, useTimelineStore } from '../../store/timelineStore';
 import { useProjectStore } from '../../store/projectStore';
+import { formatTime } from '../../utils/timeFormatters';
 import styles from './TimelineClip.module.css';
 
 interface Props {
@@ -9,7 +10,6 @@ interface Props {
   isSelected: boolean;
   onSelect: () => void;
   onTrimUpdate: (trimStart: number, trimEnd: number) => void;
-  onDelete: () => void;
 }
 
 export const TimelineClip: React.FC<Props> = ({
@@ -18,10 +18,11 @@ export const TimelineClip: React.FC<Props> = ({
   isSelected,
   onSelect,
   onTrimUpdate,
-  onDelete,
 }) => {
   const clips = useProjectStore(state => state.clips);
   const mediaClip = clips.find(c => c.id === clip.mediaClipId);
+  const getSnapPosition = useTimelineStore(state => state.getSnapPosition);
+  const showCentiseconds = useTimelineStore(state => state.showCentiseconds);
   
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [isDraggingRight, setIsDraggingRight] = useState(false);
@@ -79,10 +80,33 @@ export const TimelineClip: React.FC<Props> = ({
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - dragStartX.current;
       const deltaSeconds = deltaX / zoom;
-      const newTrimStart = Math.max(0, Math.min(
+      let newTrimStart = Math.max(0, Math.min(
         originalDuration - clip.trimEnd - 0.1,
         originalTrimStart.current + deltaSeconds
       ));
+      
+      // Apply snap to the trim position (in timeline space)
+      const trimPositionInTimeline = clip.startTime + newTrimStart;
+      console.log('🔧 LEFT TRIM: Before snap -', {
+        clipStart: clip.startTime.toFixed(3),
+        newTrimStart: newTrimStart.toFixed(3),
+        trimPositionInTimeline: trimPositionInTimeline.toFixed(3)
+      });
+      
+      const snappedPosition = getSnapPosition(trimPositionInTimeline, clip.id);
+      newTrimStart = snappedPosition - clip.startTime;
+      
+      console.log('🔧 LEFT TRIM: After snap -', {
+        snappedPosition: snappedPosition.toFixed(3),
+        newTrimStart: newTrimStart.toFixed(3)
+      });
+      
+      // Clamp again after snap
+      newTrimStart = Math.max(0, Math.min(
+        originalDuration - clip.trimEnd - 0.1,
+        newTrimStart
+      ));
+      
       onTrimUpdate(newTrimStart, clip.trimEnd);
     };
     
@@ -106,10 +130,34 @@ export const TimelineClip: React.FC<Props> = ({
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - dragStartX.current;
       const deltaSeconds = -deltaX / zoom; // Negative because trimming from end
-      const newTrimEnd = Math.max(0, Math.min(
+      let newTrimEnd = Math.max(0, Math.min(
         originalDuration - clip.trimStart - 0.1,
         originalTrimEnd.current + deltaSeconds
       ));
+      
+      // Apply snap to the trim position (in timeline space)
+      const trimPositionInTimeline = clip.startTime + originalDuration - newTrimEnd;
+      console.log('🔧 RIGHT TRIM: Before snap -', {
+        clipStart: clip.startTime.toFixed(3),
+        originalDuration: originalDuration.toFixed(3),
+        newTrimEnd: newTrimEnd.toFixed(3),
+        trimPositionInTimeline: trimPositionInTimeline.toFixed(3)
+      });
+      
+      const snappedPosition = getSnapPosition(trimPositionInTimeline, clip.id);
+      newTrimEnd = clip.startTime + originalDuration - snappedPosition;
+      
+      console.log('🔧 RIGHT TRIM: After snap -', {
+        snappedPosition: snappedPosition.toFixed(3),
+        newTrimEnd: newTrimEnd.toFixed(3)
+      });
+      
+      // Clamp again after snap
+      newTrimEnd = Math.max(0, Math.min(
+        originalDuration - clip.trimStart - 0.1,
+        newTrimEnd
+      ));
+      
       onTrimUpdate(clip.trimStart, newTrimEnd);
     };
     
@@ -121,17 +169,6 @@ export const TimelineClip: React.FC<Props> = ({
     
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  };
-  
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDelete();
   };
   
   return (
@@ -164,33 +201,25 @@ export const TimelineClip: React.FC<Props> = ({
         <div
           className={`${styles.trimHandle} ${styles.left}`}
           onMouseDown={handleLeftMouseDown}
-          title={`Start at: ${formatTime(clip.trimStart)}`}
+          title={`Start at: ${formatTime(clip.trimStart, showCentiseconds)}`}
         >
           {isDraggingLeft && (
-            <div className={`${styles.trimLabel} ${styles.leftLabel}`}>{formatTime(clip.trimStart)}</div>
+            <div className={`${styles.trimLabel} ${styles.leftLabel}`}>{formatTime(clip.trimStart, showCentiseconds)}</div>
           )}
         </div>
 
         <div className={styles.clipContent}>
           <div className={styles.clipName}>{mediaClip.name}</div>
-          <div className={styles.clipDuration}>{formatTime(clip.duration)}</div>
+          <div className={styles.clipDuration}>{formatTime(clip.duration, showCentiseconds)}</div>
         </div>
-
-        <button
-          className={styles.deleteButton}
-          onClick={handleDelete}
-          title="Delete from timeline"
-        >
-          ×
-        </button>
 
         <div
           className={`${styles.trimHandle} ${styles.right}`}
           onMouseDown={handleRightMouseDown}
-          title={`End at: ${formatTime(originalDuration - clip.trimEnd)}`}
+          title={`End at: ${formatTime(originalDuration - clip.trimEnd, showCentiseconds)}`}
         >
           {isDraggingRight && (
-            <div className={`${styles.trimLabel} ${styles.rightLabel}`}>{formatTime(originalDuration - clip.trimEnd)}</div>
+            <div className={`${styles.trimLabel} ${styles.rightLabel}`}>{formatTime(originalDuration - clip.trimEnd, showCentiseconds)}</div>
           )}
         </div>
       </div>
